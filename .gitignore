@@ -10,8 +10,7 @@ build/
 .pytest_cache/
 .ruff_cache/
 
-# uv
-uv.lock
+# uv — lockfile IS committed (reproducible builds)
 
 # Node / Frontend
 node_modules/
