@@ -1,0 +1,349 @@
+"""Tests for Vorrunde logic: pairing, points calculation, standings."""
+
+from __future__ import annotations
+
+import pytest
+
+from app.services.vorrunde import (
+    MatchPairing,
+    SwissState,
+    generate_fixed_draw,
+    generate_swiss_round,
+    get_standings,
+    is_doubles_mode,
+    record_match_result,
+    validate_player_count,
+)
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def player_ids(n: int) -> list[int]:
+    return list(range(1, n + 1))
+
+
+def match_appearances(pairings: list[MatchPairing]) -> dict[int, int]:
+    """Count how many matches each player appears in."""
+    counts: dict[int, int] = {}
+    for p in pairings:
+        for pid in p.team1 + p.team2:
+            counts[pid] = counts.get(pid, 0) + 1
+    return counts
+
+
+def all_pairs_unique(pairings: list[MatchPairing]) -> bool:
+    """Return True if no two singles matches share the same opponent pair."""
+    seen: set[frozenset[int]] = set()
+    for p in pairings:
+        if len(p.team1) == 1:
+            key = frozenset({p.team1[0], p.team2[0]})
+            if key in seen:
+                return False
+            seen.add(key)
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Mode helpers
+# ---------------------------------------------------------------------------
+
+
+class TestModeHelpers:
+    def test_doubles_mode_10(self):
+        assert is_doubles_mode(10) is True
+
+    def test_doubles_mode_12(self):
+        assert is_doubles_mode(12) is True
+
+    def test_singles_mode_9(self):
+        assert is_doubles_mode(9) is False
+
+    def test_singles_mode_11(self):
+        assert is_doubles_mode(11) is False
+
+    def test_singles_mode_13(self):
+        assert is_doubles_mode(13) is False
+
+    def test_validate_ok(self):
+        for n in range(9, 14):
+            validate_player_count(n)  # should not raise
+
+    def test_validate_too_few(self):
+        with pytest.raises(ValueError):
+            validate_player_count(8)
+
+    def test_validate_too_many(self):
+        with pytest.raises(ValueError):
+            validate_player_count(14)
+
+    def test_validate_zero(self):
+        with pytest.raises(ValueError):
+            validate_player_count(0)
+
+
+# ---------------------------------------------------------------------------
+# Fixed draw — singles
+# ---------------------------------------------------------------------------
+
+
+class TestFixedDrawSingles:
+    @pytest.mark.parametrize("n", [9, 11, 13])
+    def test_no_repeat_pairings(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        assert all_pairs_unique(pairings)
+
+    @pytest.mark.parametrize("n", [9, 11, 13])
+    def test_max_4_matches_per_player(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        counts = match_appearances(pairings)
+        for pid, count in counts.items():
+            assert count <= 4, f"Player {pid} has {count} matches (max 4)"
+
+    @pytest.mark.parametrize("n", [9, 11, 13])
+    def test_most_players_get_matches(self, n: int):
+        """All or all-but-one players should have at least 3 matches."""
+        pairings = generate_fixed_draw(player_ids(n))
+        counts = match_appearances(pairings)
+        ids = player_ids(n)
+        players_with_few = [pid for pid in ids if counts.get(pid, 0) < 3]
+        # At most 1 player can have fewer than 3 (bye in odd-player schedule)
+        assert len(players_with_few) <= 1
+
+    @pytest.mark.parametrize("n", [9, 11, 13])
+    def test_all_pairings_are_singles(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        for p in pairings:
+            assert len(p.team1) == 1
+            assert len(p.team2) == 1
+
+    @pytest.mark.parametrize("n", [9, 11, 13])
+    def test_round_numbers_positive(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        for p in pairings:
+            assert p.round_number >= 1
+
+    def test_invalid_player_count_raises(self):
+        with pytest.raises(ValueError):
+            generate_fixed_draw(player_ids(8))
+
+
+# ---------------------------------------------------------------------------
+# Fixed draw — doubles
+# ---------------------------------------------------------------------------
+
+
+class TestFixedDrawDoubles:
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_6_matches_per_player(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        counts = match_appearances(pairings)
+        for pid in player_ids(n):
+            assert counts.get(pid, 0) == 6, (
+                f"Player {pid} has {counts.get(pid, 0)} matches, expected 6"
+            )
+
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_all_pairings_are_doubles(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        for p in pairings:
+            assert len(p.team1) == 2
+            assert len(p.team2) == 2
+
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_no_repeat_partners(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        partner_history: dict[int, set[int]] = {}
+        for p in pairings:
+            for team in [p.team1, p.team2]:
+                a, b = team[0], team[1]
+                assert b not in partner_history.get(a, set()), (
+                    f"Players {a} and {b} are partners more than once"
+                )
+                assert a not in partner_history.get(b, set()), (
+                    f"Players {b} and {a} are partners more than once"
+                )
+                partner_history.setdefault(a, set()).add(b)
+                partner_history.setdefault(b, set()).add(a)
+
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_teams_have_4_unique_players(self, n: int):
+        pairings = generate_fixed_draw(player_ids(n))
+        for p in pairings:
+            all_four = p.team1 + p.team2
+            assert len(all_four) == len(set(all_four)), (
+                "A player appears on both teams in the same match"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Swiss system — singles
+# ---------------------------------------------------------------------------
+
+
+class TestSwissSingles:
+    @pytest.mark.parametrize("n", [9, 11, 13])
+    def test_round1_random_pairings_cover_players(self, n: int):
+        ids = player_ids(n)
+        state = SwissState(player_ids=ids)
+        pairings = generate_swiss_round(state)
+        counts = match_appearances(pairings)
+        # With odd n, at most 1 player gets a bye
+        players_without_match = [pid for pid in ids if counts.get(pid, 0) == 0]
+        assert len(players_without_match) <= 1
+
+    @pytest.mark.parametrize("n", [9, 11, 13])
+    def test_no_repeat_pairings_over_multiple_rounds(self, n: int):
+        ids = player_ids(n)
+        state = SwissState(player_ids=ids)
+
+        all_pairings: list[MatchPairing] = []
+        for _ in range(4):
+            round_pairings = generate_swiss_round(state)
+            all_pairings.extend(round_pairings)
+            # Record dummy results so standings update
+            for p in round_pairings:
+                record_match_result(
+                    state,
+                    p,
+                    winner_team=1,
+                    team1_score=200,
+                    team2_score=150,
+                    team1_visits=10,
+                    team2_visits=12,
+                )
+
+        assert all_pairs_unique(all_pairings), (
+            "Repeat pairings detected in Swiss system"
+        )
+
+    def test_round_numbers_increment(self):
+        state = SwissState(player_ids=player_ids(9))
+        for expected_round in range(1, 4):
+            pairings = generate_swiss_round(state)
+            for p in pairings:
+                assert p.round_number == expected_round
+            for p in pairings:
+                record_match_result(
+                    state, p,
+                    winner_team=1,
+                    team1_score=200, team2_score=150,
+                    team1_visits=10, team2_visits=12,
+                )
+
+
+# ---------------------------------------------------------------------------
+# Points calculation
+# ---------------------------------------------------------------------------
+
+
+class TestPointsCalculation:
+    def test_winner_gets_1_reg_point(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = MatchPairing(round_number=1, team1=[1], team2=[2])
+        record_match_result(
+            state, pairing,
+            winner_team=1,
+            team1_score=301, team2_score=250,
+            team1_visits=15, team2_visits=18,
+        )
+        assert state.standings[1].reg_points == 1.0
+        assert state.standings[2].reg_points == 0.0
+
+    def test_average_calculated_correctly(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = MatchPairing(round_number=1, team1=[1], team2=[2])
+        # Player 1: 240 points in 8 visits → average = 30.0
+        record_match_result(
+            state, pairing,
+            winner_team=1,
+            team1_score=240, team2_score=180,
+            team1_visits=8, team2_visits=9,
+        )
+        assert state.standings[1].avg_score == pytest.approx(30.0)
+
+    def test_avg_bonus_added_to_sort_key(self):
+        """Average/100 should contribute to sort_key."""
+        state = SwissState(player_ids=[1, 2])
+        pairing = MatchPairing(round_number=1, team1=[1], team2=[2])
+        # Player 1: avg = 100 → avg_bonus = 1.0; wins → reg_points=1
+        # Player 2: avg = 50 → avg_bonus = 0.5; loses → reg_points=0
+        record_match_result(
+            state, pairing,
+            winner_team=1,
+            team1_score=100, team2_score=50,
+            team1_visits=1, team2_visits=1,
+        )
+        s1 = state.standings[1]
+        s2 = state.standings[2]
+        assert s1.sort_key > s2.sort_key
+
+    def test_zero_avg_when_no_visits(self):
+        state = SwissState(player_ids=[1])
+        assert state.standings[1].avg_score == 0.0
+        assert state.standings[1].avg_bonus == 0.0
+
+    def test_multiple_matches_accumulate(self):
+        state = SwissState(player_ids=[1, 2, 3])
+        # Match 1: 1 beats 2
+        p1 = MatchPairing(round_number=1, team1=[1], team2=[2])
+        record_match_result(state, p1, winner_team=1,
+                            team1_score=200, team2_score=150,
+                            team1_visits=10, team2_visits=12)
+        # Match 2: 1 beats 3
+        p2 = MatchPairing(round_number=2, team1=[1], team2=[3])
+        record_match_result(state, p2, winner_team=1,
+                            team1_score=180, team2_score=160,
+                            team1_visits=9, team2_visits=11)
+        assert state.standings[1].reg_points == 2.0
+        assert state.standings[1].total_visits == 19
+
+
+# ---------------------------------------------------------------------------
+# Standings ordering
+# ---------------------------------------------------------------------------
+
+
+class TestStandingsOrdering:
+    def test_winner_ranks_above_loser(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = MatchPairing(round_number=1, team1=[1], team2=[2])
+        record_match_result(state, pairing, winner_team=1,
+                            team1_score=200, team2_score=150,
+                            team1_visits=10, team2_visits=12)
+        standings = get_standings(state)
+        assert standings[0].player_id == 1
+
+    def test_tied_reg_points_tiebreak_by_bonus(self):
+        """When two players have equal reg_points, higher bonus_points wins."""
+        state = SwissState(player_ids=[1, 2])
+        state.standings[1].reg_points = 2.0
+        state.standings[2].reg_points = 2.0
+        state.standings[1].bonus_points = 50
+        state.standings[2].bonus_points = 100
+        # Both have 0 visits → avg_bonus = 0 for both
+        standings = get_standings(state)
+        assert standings[0].player_id == 2  # higher bonus_points
+
+    def test_standings_sorted_descending(self):
+        state = SwissState(player_ids=[1, 2, 3, 4])
+        state.standings[1].reg_points = 3.0
+        state.standings[2].reg_points = 1.0
+        state.standings[3].reg_points = 2.0
+        state.standings[4].reg_points = 0.0
+        standings = get_standings(state)
+        points = [s.reg_points for s in standings]
+        assert points == sorted(points, reverse=True)
+
+    def test_avg_bonus_breaks_tie_over_plain_reg_points(self):
+        """Player with same wins but higher average ranks higher."""
+        state = SwissState(player_ids=[1, 2])
+        state.standings[1].reg_points = 1.0
+        state.standings[2].reg_points = 1.0
+        state.standings[1].total_score = 200
+        state.standings[1].total_visits = 10  # avg=20, bonus=0.2
+        state.standings[2].total_score = 100
+        state.standings[2].total_visits = 10  # avg=10, bonus=0.1
+        standings = get_standings(state)
+        assert standings[0].player_id == 1
