@@ -11,18 +11,18 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/project-scaffolding`
 
 ### Backend
-- [ ] Initialize uv project (`pyproject.toml`) with dependencies:
+- [x] Initialize uv project (`pyproject.toml`) with dependencies:
       FastAPI, uvicorn, SQLAlchemy, aiosqlite, websockets, pytest, ruff
-- [ ] Create `backend/app/main.py` with minimal FastAPI app (health endpoint)
-- [ ] Set up SQLAlchemy async engine with SQLite (`backend/app/database.py`)
-- [ ] Verify `ruff` linter runs cleanly on empty project
-- [ ] Verify `pytest` runs (no tests yet, just confirms setup)
+- [x] Create `backend/app/main.py` with minimal FastAPI app (health endpoint)
+- [x] Set up SQLAlchemy async engine with SQLite (`backend/app/database.py`)
+- [x] Verify `ruff` linter runs cleanly on empty project
+- [x] Verify `pytest` runs (no tests yet, just confirms setup)
 
 ### Frontend
-- [ ] Initialize Vite + React + TypeScript project in `frontend/`
-- [ ] Install ESLint + Prettier, configure for Airbnb style
-- [ ] Verify `npm run build` produces output without errors
-- [ ] Verify `npm run lint` runs cleanly
+- [x] Initialize Vite + React + TypeScript project in `frontend/`
+- [x] Install ESLint + Prettier, configure for Airbnb style
+- [x] Verify `npm run build` produces output without errors
+- [x] Verify `npm run lint` runs cleanly
 
 ---
 
@@ -31,24 +31,24 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/data-models`
 
 ### SQLAlchemy Models (`backend/app/models/`)
-- [ ] `Player`: id, name, photo_path, music_path, championship_count
-- [ ] `Tournament`: id, created_at, player_count, mode (swiss/fixed), status
-- [ ] `TournamentPlayer`: tournament_id, player_id, reg_points, bonus_points, avg_score
-- [ ] `Match`: id, tournament_id, round_type (vorrunde/ko/lightning), round_number,
+- [x] `Player`: id, name, photo_path, music_path, championship_count
+- [x] `Tournament`: id, created_at, player_count, mode (swiss/fixed), status
+- [x] `TournamentPlayer`: tournament_id, player_id, reg_points, bonus_points, avg_score
+- [x] `Match`: id, tournament_id, round_type (vorrunde/ko/lightning), round_number,
       player1_id, player2_id, (optional) player3_id, player4_id,
       starting_score_p1, starting_score_p2, winner_id, status
-- [ ] `Visit`: id, match_id, player_id, dart1, dart2, dart3, total, is_bust, visit_number
-- [ ] `SpecialEvent`: id, visit_id, player_id, event_type, bonus_value
-- [ ] `BettingAccount`: id, player_id (nullable for spectators), name, balance
-- [ ] `Bet`: id, match_id, account_id, amount, picked_player_id, payout
+- [x] `Visit`: id, match_id, player_id, dart1, dart2, dart3, total, is_bust, visit_number
+- [x] `SpecialEvent`: id, visit_id, player_id, event_type, bonus_value
+- [x] `BettingAccount`: id, player_id (nullable for spectators), name, balance
+- [x] `Bet`: id, match_id, account_id, amount, picked_player_id, payout
 
 ### Pydantic Schemas (`backend/app/schemas/`)
-- [ ] Schemas for all models (Create, Read, Update variants)
-- [ ] Response schemas for API endpoints
+- [x] Schemas for all models (Create, Read, Update variants)
+- [x] Response schemas for API endpoints
 
 ### Tests
-- [ ] Test: create tournament with players, verify DB relations
-- [ ] Test: all model constraints (nullable fields, foreign keys)
+- [x] Test: create tournament with players, verify DB relations
+- [x] Test: all model constraints (nullable fields, foreign keys)
 
 ---
 
