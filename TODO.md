@@ -184,21 +184,21 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/handicap`
 
 ### Logic (`backend/app/services/handicap.py`)
-- [ ] Input: championship count of player A, championship count of player B
-- [ ] Difference = abs(A - B)
-- [ ] If difference < 3: no handicap
-- [ ] If difference >= 3: stronger player's starting score += 100 + (difference - 3) * 40
+- [x] Input: championship count of player A, championship count of player B
+- [x] Difference = abs(A - B)
+- [x] If difference < 3: no handicap
+- [x] If difference >= 3: stronger player's starting score += 100 + (difference - 3) * 40
       (e.g. diff=3 → +100, diff=4 → +140, diff=5 → +180)
-- [ ] Doubles (2v2): compute 4 pairwise comparisons (p1 vs p3, p1 vs p4, p2 vs p3, p2 vs p4),
+- [x] Doubles (2v2): compute 4 pairwise comparisons (p1 vs p3, p1 vs p4, p2 vs p3, p2 vs p4),
       sum all handicap values, divide by 4 (round to nearest integer)
-- [ ] Return adjusted starting scores for both sides
+- [x] Return adjusted starting scores for both sides
 
 ### Tests
-- [ ] diff=0 → no handicap
-- [ ] diff=2 → no handicap
-- [ ] diff=3 → stronger side +100
-- [ ] diff=5 → stronger side +180
-- [ ] doubles: mixed championship counts, verify quartered result
+- [x] diff=0 → no handicap
+- [x] diff=2 → no handicap
+- [x] diff=3 → stronger side +100
+- [x] diff=5 → stronger side +180
+- [x] doubles: mixed championship counts, verify quartered result
 
 ---
 
