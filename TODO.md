@@ -57,35 +57,35 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/vorrunde-logic`
 
 ### Player count & mode selection (`backend/app/services/vorrunde.py`)
-- [ ] Helper: determine mode for n players
+- [x] Helper: determine mode for n players
       (n=10 or 12 → doubles eligible; n=9,11,13 → singles only)
-- [ ] Helper: validate that n is between 9 and 13
+- [x] Helper: validate that n is between 9 and 13
 
 ### Fixed Draw
-- [ ] Generate all pairings upfront at tournament start
-- [ ] Singles (n=9,11,13): each player gets 3–4 opponents, no repeat pairings
-- [ ] Doubles (n=10,12): each player gets 6 matches with a unique partner each time
+- [x] Generate all pairings upfront at tournament start
+- [x] Singles (n=9,11,13): each player gets 3–4 opponents, no repeat pairings
+- [x] Doubles (n=10,12): each player gets 6 matches with a unique partner each time
       (partner rotation: no player plays with same partner twice)
-- [ ] Produce a schedule (ordered list of rounds, each round = parallel matches)
+- [x] Produce a schedule (ordered list of rounds, each round = parallel matches)
 
 ### Swiss System
-- [ ] Round 1: random pairings
-- [ ] Round N>1: pair players with similar point totals, avoid repeat pairings
-- [ ] Bye handling if needed (odd number of non-doubles players in a round)
-- [ ] Produce round-by-round schedule (next round generated after each round finishes)
+- [x] Round 1: random pairings
+- [x] Round N>1: pair players with similar point totals, avoid repeat pairings
+- [x] Bye handling if needed (odd number of non-doubles players in a round)
+- [x] Produce round-by-round schedule (next round generated after each round finishes)
 
 ### Points Calculation
-- [ ] Win: +1 point; Loss: +0 points
-- [ ] After each match: compute 3-dart average for each player (total_score / visits / 3 * 3 = total/visits)
+- [x] Win: +1 point; Loss: +0 points
+- [x] After each match: compute 3-dart average for each player (total_score / visits / 3 * 3 = total/visits)
       Wait — 3-dart average = total points scored / number of visits
-- [ ] Add average × (1/100) to regular points
-- [ ] Standings: sort by (regular_points + avg_bonus) desc, then by bonus_points desc as tiebreaker
+- [x] Add average × (1/100) to regular points
+- [x] Standings: sort by (regular_points + avg_bonus) desc, then by bonus_points desc as tiebreaker
 
 ### Tests
-- [ ] Test Swiss pairings for n=9,10,11,12,13 — no repeat pairings, correct match count
-- [ ] Test fixed draw partner rotation (no duplicate partners in doubles)
-- [ ] Test points calculation with sample match data
-- [ ] Test standings ordering with tied regular points
+- [x] Test Swiss pairings for n=9,10,11,12,13 — no repeat pairings, correct match count
+- [x] Test fixed draw partner rotation (no duplicate partners in doubles)
+- [x] Test points calculation with sample match data
+- [x] Test standings ordering with tied regular points
 
 ---
 
@@ -94,29 +94,29 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/ko-bracket`
 
 ### Qualification (`backend/app/services/ko.py`)
-- [ ] Sort players by regular points (desc)
-- [ ] Top 6 qualify directly
-- [ ] From remaining: sort by bonus_points (desc), take top 2
-- [ ] Ensure no player appears in both lists (can't qualify via both channels)
-- [ ] Seed 8 players into quarter-final bracket (1v8, 2v7, 3v6, 4v5)
+- [x] Sort players by regular points (desc)
+- [x] Top 6 qualify directly
+- [x] From remaining: sort by bonus_points (desc), take top 2
+- [x] Ensure no player appears in both lists (can't qualify via both channels)
+- [x] Seed 8 players into quarter-final bracket (1v8, 2v7, 3v6, 4v5)
 
 ### Bracket Progression
-- [ ] Generate QF matches from seeding
-- [ ] After each QF: winners → SF, losers → Lightning Round
-- [ ] After each SF: winners → Final/3rd-place match, losers → Lightning Round
-- [ ] Final: 2 legs (best of 2, tiebreak leg if 1-1?)
-- [ ] Track bracket state: who is where at each stage
+- [x] Generate QF matches from seeding
+- [x] After each QF: winners → SF, losers → Lightning Round
+- [x] After each SF: winners → Final/3rd-place match, losers → Lightning Round
+- [x] Final: 2 legs (best of 2, tiebreak leg if 1-1?)
+- [x] Track bracket state: who is where at each stage
 
 ### Starting Score with Handicap
-- [ ] Before generating each KO match: call handicap calculator (Task 8)
-- [ ] Store result in `Match.starting_score_p1` / `starting_score_p2`
-- [ ] Doubles KO: apply quartered handicap
+- [x] Before generating each KO match: call handicap calculator (Task 7)
+- [x] Store result in `Match.starting_score_p1` / `starting_score_p2`
+- [x] Doubles KO: n/a — KO and Lightning rounds are singles only
 
 ### Tests
-- [ ] Test qualification: 13 players, verify exactly 8 qualify, no overlap
-- [ ] Test edge case: player 6 and player 7 have same regular points (tiebreak)
-- [ ] Test bracket seeding for 8 players
-- [ ] Test that losers correctly feed into Lightning Round
+- [x] Test qualification: 13 players, verify exactly 8 qualify, no overlap
+- [x] Test edge case: player 6 and player 7 have same regular points (tiebreak)
+- [x] Test bracket seeding for 8 players
+- [x] Test that losers correctly feed into Lightning Round
 
 ---
 
