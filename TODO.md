@@ -143,39 +143,39 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/match-flow`
 
 ### Bull Throw (`backend/app/services/match.py`)
-- [ ] Record bull distance for each player/team
-- [ ] Determine starting player (closest to bull goes first)
-- [ ] Tie handling: re-throw (store multiple rounds if needed)
+- [x] Record bull distance for each player/team
+- [x] Determine starting player (closest to bull goes first)
+- [x] Tie handling: re-throw (store multiple rounds if needed)
 
 ### Score Entry & Validation
-- [ ] Accept a visit: (dart1, dart2, dart3) as individual values OR total
-- [ ] Validate each dart: 0–60 (single fields), double fields, triple fields, bull (25/50)
-- [ ] Compute visit total
-- [ ] Bust detection: if remaining - total < 0, OR remaining - total == 1 (can't finish on 1 in Double-Out),
+- [x] Accept a visit: (dart1, dart2, dart3) as individual values OR total
+- [x] Validate each dart: 0–60 (single fields), double fields, triple fields, bull (25/50)
+- [x] Compute visit total
+- [x] Bust detection: if remaining - total < 0, OR remaining - total == 1 (can't finish on 1 in Double-Out),
       OR total > remaining → bust, visit scores 0, player keeps current remaining
-- [ ] Double-Out check: final dart must be a double (or bullseye=D25) — else bust
-- [ ] Single-Out fallback: after visit limit (15 Vorrunde, 25 KO), switch to Single-Out rules
+- [x] Double-Out check: final dart must be a double (or bullseye=D25) — else bust
+- [x] Single-Out fallback: after visit limit (15 Vorrunde, 25 KO), switch to Single-Out rules
 
 ### Checkout Suggestion
-- [ ] For each remaining score (2–170): precompute optimal checkout path
+- [x] For each remaining score (2–170): precompute optimal checkout path
       (max 3 darts, standard dartboard, prefer known checkouts)
-- [ ] Return suggestion(s) for current remaining score
-- [ ] Handle scores with no 1-dart or 2-dart finish (show 3-dart path)
-- [ ] Return empty suggestion if no checkout possible in 3 darts
+- [x] Return suggestion(s) for current remaining score
+- [x] Handle scores with no 1-dart or 2-dart finish (show 3-dart path)
+- [x] Return empty suggestion if no checkout possible in 3 darts
 
 ### Single-Out Fallback Trigger
-- [ ] Track visit count per player per leg
-- [ ] After visit 15 (Vorrunde) or 25 (KO): set match flag `single_out_mode = True`
-- [ ] In Single-Out mode: player may finish on any field (no double required)
-- [ ] Bust still applies (can't overshoot)
+- [x] Track visit count per player per leg
+- [x] After visit 15 (Vorrunde) or 25 (KO): set match flag `single_out_mode = True`
+- [x] In Single-Out mode: player may finish on any field (no double required)
+- [x] Bust still applies (can't overshoot)
 
 ### Tests
-- [ ] Test bust: player on 32, throws 33 → bust, score unchanged
-- [ ] Test Double-Out: player on 32, throws D16 → valid finish
-- [ ] Test Double-Out: player on 32, throws S16 → bust
-- [ ] Test Single-Out fallback triggers at correct visit count
-- [ ] Test checkout suggestions for common scores (170, 121, 40, 2)
-- [ ] Test bull throw: tie goes to re-throw
+- [x] Test bust: player on 32, throws 33 → bust, score unchanged
+- [x] Test Double-Out: player on 32, throws D16 → valid finish
+- [x] Test Double-Out: player on 32, throws S16 → bust
+- [x] Test Single-Out fallback triggers at correct visit count
+- [x] Test checkout suggestions for common scores (170, 121, 40, 2)
+- [x] Test bull throw: tie goes to re-throw
 
 ---
 
