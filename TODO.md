@@ -249,13 +249,13 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/bonus-points`
 
 ### Aggregation (`backend/app/services/bonus.py`)
-- [ ] Sum all SpecialEvent.bonus_value per player per tournament (Vorrunde only)
-- [ ] Expose total bonus points per player for standings and KO qualification
-- [ ] Real-time update: recalculate after each visit
+- [x] Sum all SpecialEvent.bonus_value per player per tournament (Vorrunde only)
+- [x] Expose total bonus points per player for standings and KO qualification
+- [x] Real-time update: recalculate after each visit
 
 ### Tests
-- [ ] Test running total updates correctly after each visit
-- [ ] Test KO events produce 0 bonus (not added to total)
+- [x] Test running total updates correctly after each visit
+- [x] Test KO events produce 0 bonus (not added to total)
 
 ---
 
