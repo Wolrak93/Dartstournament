@@ -465,10 +465,8 @@ def record_match_result(
     pairing: MatchPairing,
     *,
     winner_team: int,  # 1 or 2
-    team1_score: int,
-    team2_score: int,
-    team1_visits: int,
-    team2_visits: int,
+    scores: dict[int, int],   # player_id → dart points scored in this match
+    visits: dict[int, int],   # player_id → number of visits thrown
 ) -> None:
     """Update standings after a completed match.
 
@@ -476,40 +474,31 @@ def record_match_result(
         state: SwissState to update.
         pairing: The match that was played.
         winner_team: 1 if team1 won, 2 if team2 won.
-        team1_score: Total dart points scored by team1 (used for average).
-        team2_score: Total dart points scored by team2.
-        team1_visits: Number of visits thrown by team1.
-        team2_visits: Number of visits thrown by team2.
+        scores: Per-player dart points scored (used for individual average).
+        visits: Per-player visit count.
     """
     if winner_team not in {1, 2}:
         raise ValueError("winner_team must be 1 or 2.")
 
+    all_players = pairing.team1 + pairing.team2
+    missing = [pid for pid in all_players if pid not in scores or pid not in visits]
+    if missing:
+        raise ValueError(f"Missing score/visit data for player IDs: {missing}")
+
     winners = pairing.team1 if winner_team == 1 else pairing.team2
     losers = pairing.team2 if winner_team == 1 else pairing.team1
-
-    # Distribute score/visits evenly per player in the team
-    team1_players = len(pairing.team1)
-    team2_players = len(pairing.team2)
 
     for pid in winners:
         s = state.standings[pid]
         s.reg_points += 1.0
-        if pid in pairing.team1:
-            s.total_score += team1_score // team1_players
-            s.total_visits += team1_visits // team1_players
-        else:
-            s.total_score += team2_score // team2_players
-            s.total_visits += team2_visits // team2_players
+        s.total_score += scores[pid]
+        s.total_visits += visits[pid]
 
     for pid in losers:
         s = state.standings[pid]
         # No reg_points for a loss
-        if pid in pairing.team2:
-            s.total_score += team2_score // team2_players
-            s.total_visits += team2_visits // team2_players
-        else:
-            s.total_score += team1_score // team1_players
-            s.total_visits += team1_visits // team1_players
+        s.total_score += scores[pid]
+        s.total_visits += visits[pid]
 
 
 def get_standings(state: SwissState) -> list[PlayerStanding]:

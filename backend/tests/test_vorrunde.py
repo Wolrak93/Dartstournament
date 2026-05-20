@@ -208,10 +208,8 @@ class TestSwissSingles:
                     state,
                     p,
                     winner_team=1,
-                    team1_score=200,
-                    team2_score=150,
-                    team1_visits=10,
-                    team2_visits=12,
+                    scores={pid: 200 for pid in p.team1 + p.team2},
+                    visits={pid: 10 for pid in p.team1 + p.team2},
                 )
 
         assert all_pairs_unique(all_pairings), (
@@ -228,8 +226,8 @@ class TestSwissSingles:
                 record_match_result(
                     state, p,
                     winner_team=1,
-                    team1_score=200, team2_score=150,
-                    team1_visits=10, team2_visits=12,
+                    scores={pid: 200 for pid in p.team1 + p.team2},
+                    visits={pid: 10 for pid in p.team1 + p.team2},
                 )
 
 
@@ -245,8 +243,8 @@ class TestPointsCalculation:
         record_match_result(
             state, pairing,
             winner_team=1,
-            team1_score=301, team2_score=250,
-            team1_visits=15, team2_visits=18,
+            scores={1: 301, 2: 250},
+            visits={1: 15, 2: 18},
         )
         assert state.standings[1].reg_points == 1.0
         assert state.standings[2].reg_points == 0.0
@@ -258,8 +256,8 @@ class TestPointsCalculation:
         record_match_result(
             state, pairing,
             winner_team=1,
-            team1_score=240, team2_score=180,
-            team1_visits=8, team2_visits=9,
+            scores={1: 240, 2: 180},
+            visits={1: 8, 2: 9},
         )
         assert state.standings[1].avg_score == pytest.approx(30.0)
 
@@ -272,8 +270,8 @@ class TestPointsCalculation:
         record_match_result(
             state, pairing,
             winner_team=1,
-            team1_score=100, team2_score=50,
-            team1_visits=1, team2_visits=1,
+            scores={1: 100, 2: 50},
+            visits={1: 1, 2: 1},
         )
         s1 = state.standings[1]
         s2 = state.standings[2]
@@ -289,15 +287,50 @@ class TestPointsCalculation:
         # Match 1: 1 beats 2
         p1 = MatchPairing(round_number=1, team1=[1], team2=[2])
         record_match_result(state, p1, winner_team=1,
-                            team1_score=200, team2_score=150,
-                            team1_visits=10, team2_visits=12)
+                            scores={1: 200, 2: 150},
+                            visits={1: 10, 2: 12})
         # Match 2: 1 beats 3
         p2 = MatchPairing(round_number=2, team1=[1], team2=[3])
         record_match_result(state, p2, winner_team=1,
-                            team1_score=180, team2_score=160,
-                            team1_visits=9, team2_visits=11)
+                            scores={1: 180, 3: 160},
+                            visits={1: 9, 3: 11})
         assert state.standings[1].reg_points == 2.0
         assert state.standings[1].total_visits == 19
+
+    def test_doubles_individual_averages(self):
+        """In doubles each player's own score/visits are tracked independently."""
+        state = SwissState(player_ids=[1, 2, 3, 4])
+        pairing = MatchPairing(round_number=1, team1=[1, 2], team2=[3, 4])
+        # Player 1 throws well (avg 60), player 2 throws badly (avg 20);
+        # team won, so both get reg_points.
+        record_match_result(
+            state, pairing,
+            winner_team=1,
+            scores={1: 300, 2: 100, 3: 200, 4: 180},
+            visits={1: 5,   2: 5,   3: 5,   4: 5},
+        )
+        assert state.standings[1].avg_score == pytest.approx(60.0)
+        assert state.standings[2].avg_score == pytest.approx(20.0)
+        assert state.standings[3].avg_score == pytest.approx(40.0)
+        assert state.standings[4].avg_score == pytest.approx(36.0)
+        # Both winners get 1 reg_point
+        assert state.standings[1].reg_points == 1.0
+        assert state.standings[2].reg_points == 1.0
+        # Both losers get 0
+        assert state.standings[3].reg_points == 0.0
+        assert state.standings[4].reg_points == 0.0
+
+    def test_missing_player_data_raises(self):
+        """ValueError if scores/visits dict is missing a player from the match."""
+        state = SwissState(player_ids=[1, 2])
+        pairing = MatchPairing(round_number=1, team1=[1], team2=[2])
+        with pytest.raises(ValueError, match="Missing score"):
+            record_match_result(
+                state, pairing,
+                winner_team=1,
+                scores={1: 200},   # player 2 missing
+                visits={1: 10, 2: 12},
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -310,8 +343,8 @@ class TestStandingsOrdering:
         state = SwissState(player_ids=[1, 2])
         pairing = MatchPairing(round_number=1, team1=[1], team2=[2])
         record_match_result(state, pairing, winner_team=1,
-                            team1_score=200, team2_score=150,
-                            team1_visits=10, team2_visits=12)
+                            scores={1: 200, 2: 150},
+                            visits={1: 10, 2: 12})
         standings = get_standings(state)
         assert standings[0].player_id == 1
 
