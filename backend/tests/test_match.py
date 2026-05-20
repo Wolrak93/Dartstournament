@@ -5,14 +5,14 @@ from __future__ import annotations
 import pytest
 
 from app.services.match import (
-    BullThrowRound,
     Dart,
     DartBand,
     VisitResult,
     dart_from_score,
     get_checkout_suggestion,
     process_visit,
-    resolve_bull_throw,
+    record_doubles_bull_throw,
+    record_singles_bull_throw,
     should_switch_to_single_out,
     validate_dart,
 )
@@ -67,41 +67,64 @@ def _visit(
 
 
 class TestBullThrow:
-    def test_clear_winner(self) -> None:
-        rounds = [BullThrowRound(distances={1: 10.0, 2: 20.0, 3: 30.0})]
-        result = resolve_bull_throw(rounds)
-        assert result.starting_player_id == 1
-        assert result.tied_rounds == 0
+    # --- Singles ---
 
-    def test_tie_resolved_in_second_round(self) -> None:
-        rounds = [
-            BullThrowRound(distances={1: 10.0, 2: 10.0}),  # tie
-            BullThrowRound(distances={1: 15.0, 2: 5.0}),   # player 2 wins
-        ]
-        result = resolve_bull_throw(rounds)
-        assert result.starting_player_id == 2
-        assert result.tied_rounds == 1
+    def test_singles_player1_wins(self) -> None:
+        result = record_singles_bull_throw(
+            player1_id=1, player2_id=2, winner_id=1
+        )
+        assert result.play_order == [1, 2]
 
-    def test_still_tied_raises(self) -> None:
-        rounds = [
-            BullThrowRound(distances={1: 10.0, 2: 10.0}),
-            BullThrowRound(distances={1: 8.0, 2: 8.0}),  # still tied
-        ]
-        with pytest.raises(ValueError, match="still tied"):
-            resolve_bull_throw(rounds)
+    def test_singles_player2_wins(self) -> None:
+        result = record_singles_bull_throw(
+            player1_id=1, player2_id=2, winner_id=2
+        )
+        assert result.play_order == [2, 1]
 
-    def test_empty_rounds_raises(self) -> None:
-        with pytest.raises(ValueError):
-            resolve_bull_throw([])
+    def test_singles_invalid_winner_raises(self) -> None:
+        with pytest.raises(ValueError, match="not one of the match players"):
+            record_singles_bull_throw(player1_id=1, player2_id=2, winner_id=99)
 
-    def test_three_players_two_tied_one_wins(self) -> None:
-        rounds = [
-            BullThrowRound(distances={1: 5.0, 2: 5.0, 3: 15.0}),  # p3 out, p1/p2 tied
-            BullThrowRound(distances={1: 3.0, 2: 7.0}),              # p1 wins
-        ]
-        result = resolve_bull_throw(rounds)
-        assert result.starting_player_id == 1
-        assert result.tied_rounds == 1
+    # --- Doubles ---
+
+    def test_doubles_team1_player_best(self) -> None:
+        """Team1=(1,2), Team2=(3,4). Best=1, best opponent=3."""
+        result = record_doubles_bull_throw(
+            team1=(1, 2), team2=(3, 4),
+            best_player_id=1, best_opponent_id=3,
+        )
+        assert result.play_order == [1, 3, 2, 4]
+
+    def test_doubles_team2_player_best(self) -> None:
+        """Team1=(1,2), Team2=(3,4). Best=4, best opponent=2."""
+        result = record_doubles_bull_throw(
+            team1=(1, 2), team2=(3, 4),
+            best_player_id=4, best_opponent_id=2,
+        )
+        assert result.play_order == [4, 2, 3, 1]
+
+    def test_doubles_partner_and_remaining_correct(self) -> None:
+        """Verify partner of best and remaining opponent are in correct slots."""
+        result = record_doubles_bull_throw(
+            team1=(10, 20), team2=(30, 40),
+            best_player_id=20, best_opponent_id=40,
+        )
+        # best=20 (team1), partner=10; best_opp=40, remaining=30
+        assert result.play_order == [20, 40, 10, 30]
+
+    def test_doubles_best_opponent_wrong_team_raises(self) -> None:
+        with pytest.raises(ValueError, match="opposing team"):
+            record_doubles_bull_throw(
+                team1=(1, 2), team2=(3, 4),
+                best_player_id=1, best_opponent_id=2,  # 2 is partner, not opponent
+            )
+
+    def test_doubles_best_player_not_in_match_raises(self) -> None:
+        with pytest.raises(ValueError, match="not in match"):
+            record_doubles_bull_throw(
+                team1=(1, 2), team2=(3, 4),
+                best_player_id=99, best_opponent_id=3,
+            )
 
 
 # ---------------------------------------------------------------------------

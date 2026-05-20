@@ -10,7 +10,7 @@ Handles:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 
 # ---------------------------------------------------------------------------
@@ -152,56 +152,82 @@ def validate_dart(dart: Dart) -> None:
 
 
 @dataclass
-class BullThrowRound:
-    """One round of bull throws (one per player/side)."""
-
-    distances: dict[int, float]  # player_id → distance in mm (smaller = better)
-
-
-@dataclass
 class BullThrowResult:
-    """Final bull-throw outcome after all tie-breaking."""
+    """Bull-throw outcome — full playing order for a match.
 
-    starting_player_id: int
-    rounds: list[BullThrowRound] = field(default_factory=list)
-    tied_rounds: int = 0  # how many re-throws were needed
-
-
-def resolve_bull_throw(rounds: list[BullThrowRound]) -> BullThrowResult:
-    """Determine starting player from one or more bull-throw rounds.
-
-    Rules:
-    - The player with the smallest distance goes first.
-    - If two or more players are tied (same distance), a new round must be added
-      for *all tied players only*.
-    - This function processes all provided rounds sequentially until a winner is found.
-    - If the final round still has a tie, raises ValueError
-      (caller must add another round).
+    play_order contains player IDs in the order they will throw during the leg.
+    - Singles: [first_player_id, second_player_id]
+    - Doubles: [p_best, p_best_opponent, p_partner_of_best, p_remaining]
     """
-    if not rounds:
-        raise ValueError("At least one bull-throw round is required")
 
-    tied_rounds = 0
-    competing: set[int] = set(rounds[0].distances.keys())
+    play_order: list[int]
 
-    for rnd in rounds:
-        relevant = {
-            pid: dist for pid, dist in rnd.distances.items() if pid in competing
-        }
-        min_dist = min(relevant.values())
-        winners = [pid for pid, dist in relevant.items() if dist == min_dist]
-        if len(winners) == 1:
-            return BullThrowResult(
-                starting_player_id=winners[0],
-                rounds=rounds,
-                tied_rounds=tied_rounds,
-            )
-        # Still tied — the next round must be for these players only
-        tied_rounds += 1
-        competing = set(winners)
 
+def record_singles_bull_throw(
+    player1_id: int,
+    player2_id: int,
+    winner_id: int,
+) -> BullThrowResult:
+    """Record the result of a singles bull throw.
+
+    The referee simply selects which player threw closer to the bull.
+    No distance measurement is needed.
+
+    winner_id must be either player1_id or player2_id.
+    """
+    if winner_id == player1_id:
+        return BullThrowResult(play_order=[player1_id, player2_id])
+    if winner_id == player2_id:
+        return BullThrowResult(play_order=[player2_id, player1_id])
     raise ValueError(
-        "Bull throw still tied after all provided rounds; add another round"
+        f"winner_id {winner_id} is not one of the match players "
+        f"({player1_id}, {player2_id})"
+    )
+
+
+def record_doubles_bull_throw(
+    team1: tuple[int, int],
+    team2: tuple[int, int],
+    best_player_id: int,
+    best_opponent_id: int,
+) -> BullThrowResult:
+    """Determine playing order for a doubles match from bull throws.
+
+    All 4 players throw. The referee identifies:
+    - best_player_id:   the player with the best (closest) throw overall
+    - best_opponent_id: the best thrower from the *opposing* team
+
+    Playing order:
+      1. best_player_id
+      2. best_opponent_id
+      3. partner of best_player_id (the other member of their team)
+      4. remaining opponent
+
+    Args:
+        team1:            (player1_id, player2_id)
+        team2:            (player3_id, player4_id)
+        best_player_id:   must be in team1 or team2
+        best_opponent_id: must be in the team that does NOT contain best_player_id
+    """
+    all_players = set(team1) | set(team2)
+    if best_player_id not in all_players:
+        raise ValueError(f"best_player_id {best_player_id} not in match")
+    if best_opponent_id not in all_players:
+        raise ValueError(f"best_opponent_id {best_opponent_id} not in match")
+
+    best_team = team1 if best_player_id in team1 else team2
+    opp_team = team2 if best_player_id in team1 else team1
+
+    if best_opponent_id not in opp_team:
+        raise ValueError(
+            f"best_opponent_id {best_opponent_id} must be from the opposing team"
+        )
+
+    partner = next(p for p in best_team if p != best_player_id)
+    remaining = next(p for p in opp_team if p != best_opponent_id)
+
+    return BullThrowResult(
+        play_order=[best_player_id, best_opponent_id, partner, remaining]
     )
 
 
