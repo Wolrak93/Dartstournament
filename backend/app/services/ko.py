@@ -417,3 +417,64 @@ def advance_after_sf(
         third_place_match=third_place_match,
         lightning_player_ids=list(bracket.lightning_player_ids),
     )
+
+
+# ---------------------------------------------------------------------------
+# Persistence helpers (require an async DB session)
+# ---------------------------------------------------------------------------
+
+
+async def persist_ko_match_result(
+    db: object,
+    match_id: int,
+    winner_id: int,
+) -> object:
+    """Record the winner of a KO match in the database.
+
+    Args:
+        db:        Async SQLAlchemy session (must be committed by caller).
+        match_id:  DB id of the match that was played.
+        winner_id: DB id of the winning player.
+
+    Returns:
+        The updated Match ORM object (flushed but not committed).
+    """
+    from app.repositories.match_repo import update_match_winner
+
+    return await update_match_winner(db, match_id=match_id, winner_id=winner_id)
+
+
+async def persist_ko_match_records(
+    db: object,
+    tournament_id: int,
+    matchups: list[KOMatchup],
+    round_number: int,
+) -> list[object]:
+    """Create Match DB records for a list of KO matchups.
+
+    Args:
+        db:            Async SQLAlchemy session (must be committed by caller).
+        tournament_id: DB id of the tournament.
+        matchups:      List of KOMatchup objects (from generate_ko_bracket etc.).
+        round_number:  Round number to assign to all created matches.
+
+    Returns:
+        List of newly created Match ORM objects (flushed but not committed).
+    """
+    from app.models.match import RoundType
+    from app.repositories.match_repo import create_match
+
+    matches = []
+    for i, mu in enumerate(matchups):
+        match = await create_match(
+            db,
+            tournament_id=tournament_id,
+            round_type=RoundType.ko,
+            round_number=round_number,
+            player1_id=mu.player1_id,
+            player2_id=mu.player2_id,
+            starting_score_p1=mu.starting_score_p1,
+            starting_score_p2=mu.starting_score_p2,
+        )
+        matches.append(match)
+    return matches
