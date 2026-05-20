@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from conftest import _miss  # shared helper; defined once in conftest.py
 
 from app.services.match import (
     CheckoutSuggestion,
@@ -28,10 +29,6 @@ def _d(score: int, band: DartBand | None = None, number: int = 0) -> Dart:
     if band is None:
         return dart_from_score(score)
     return Dart(score=score, band=band, number=number)
-
-
-def _miss() -> Dart:
-    return Dart(score=0, band=DartBand.MISS, number=0)
 
 
 def _single(n: int) -> Dart:
