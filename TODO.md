@@ -207,9 +207,9 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/special-events`
 
 ### Detection Engine (`backend/app/services/events.py`)
-- [ ] Input: visit (dart1, dart2, dart3), remaining_before, remaining_after, match context
-- [ ] Detect and return list of all triggered events per visit
-- [ ] Implement each of the 18 events:
+- [x] Input: visit (dart1, dart2, dart3), remaining_before, remaining_after, match context
+- [x] Detect and return list of all triggered events per visit
+- [x] Implement each of the 18 events:
 
 | Event | Detection logic |
 |---|---|
@@ -233,14 +233,14 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 | Doppel-Treffer | any dart lands on a double field (not bust) — count occurrences |
 | Gleiche Zahl | all 3 darts land in same numbered section (any band) |
 
-- [ ] Bonus points only stored if match is in Vorrunde phase
-- [ ] Events that can trigger multiple times per visit: return count × value
+- [x] Bonus points only stored if match is in Vorrunde phase
+- [x] Events that can trigger multiple times per visit: return count × value
 
 ### Tests
-- [ ] Test each of the 18 events with a crafted visit
-- [ ] Test combined events (e.g. Mad House also triggers odd Finish)
-- [ ] Test Bounce/Robin Hood (manual flag input path)
-- [ ] Test: KO match → events detected but bonus_value = 0
+- [x] Test each of the 18 events with a crafted visit
+- [x] Test combined events (e.g. Mad House also triggers odd Finish)
+- [x] Test Bounce/Robin Hood (manual flag input path)
+- [x] Test: KO match → events detected but bonus_value = 0
 
 ---
 
