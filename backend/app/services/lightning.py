@@ -237,3 +237,62 @@ def get_lightning_standings(state: LightningState) -> list[LightningStanding]:
         List of LightningStanding objects ordered by wins (desc).
     """
     return sorted(state.standings.values(), key=lambda s: s.wins, reverse=True)
+
+
+# ---------------------------------------------------------------------------
+# Persistence helpers (require an async DB session)
+# ---------------------------------------------------------------------------
+
+
+async def persist_lightning_match_result(
+    db: object,
+    match_id: int,
+    winner_id: int,
+) -> object:
+    """Record the winner of a Lightning Round match in the database.
+
+    Args:
+        db:        Async SQLAlchemy session (must be committed by caller).
+        match_id:  DB id of the match that was played.
+        winner_id: DB id of the winning player.
+
+    Returns:
+        The updated Match ORM object (flushed but not committed).
+    """
+    from app.repositories.match_repo import update_match_winner
+
+    return await update_match_winner(db, match_id=match_id, winner_id=winner_id)
+
+
+async def persist_lightning_match_records(
+    db: object,
+    tournament_id: int,
+    matchups: list[LightningMatchup],
+) -> list[object]:
+    """Create Match DB records for a Lightning Round.
+
+    Args:
+        db:            Async SQLAlchemy session (must be committed by caller).
+        tournament_id: DB id of the tournament.
+        matchups:      LightningMatchup objects from generate_next_round().
+
+    Returns:
+        List of newly created Match ORM objects (flushed but not committed).
+    """
+    from app.models.match import RoundType
+    from app.repositories.match_repo import create_match
+
+    matches = []
+    for mu in matchups:
+        match = await create_match(
+            db,
+            tournament_id=tournament_id,
+            round_type=RoundType.lightning,
+            round_number=mu.round_number,
+            player1_id=mu.player1_id,
+            player2_id=mu.player2_id,
+            starting_score_p1=mu.starting_score,
+            starting_score_p2=mu.starting_score,
+        )
+        matches.append(match)
+    return matches

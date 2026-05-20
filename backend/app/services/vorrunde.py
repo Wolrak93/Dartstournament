@@ -528,3 +528,35 @@ def get_standings(state: SwissState) -> list[PlayerStanding]:
         key=lambda s: s.sort_key,
         reverse=True,
     )
+
+
+# ---------------------------------------------------------------------------
+# Persistence helpers (require an async DB session)
+# ---------------------------------------------------------------------------
+
+
+async def persist_standings(
+    db: object,
+    tournament_id: int,
+    standings: dict[int, PlayerStanding],
+) -> None:
+    """Persist all in-memory PlayerStanding objects to TournamentPlayer rows.
+
+    Args:
+        db:            Async SQLAlchemy session (must be committed by caller).
+        tournament_id: DB id of the tournament.
+        standings:     Mapping player_id → PlayerStanding from SwissState.
+    """
+    from app.repositories.tournament_player_repo import (
+        update_tournament_player_standing,
+    )
+
+    for player_id, standing in standings.items():
+        await update_tournament_player_standing(
+            db,
+            tournament_id=tournament_id,
+            player_id=player_id,
+            reg_points=standing.reg_points,
+            bonus_points=standing.bonus_points,
+            avg_score=standing.avg_score,
+        )

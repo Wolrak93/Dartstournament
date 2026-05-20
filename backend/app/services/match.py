@@ -791,3 +791,59 @@ def get_checkout_suggestion(
     if single_out:
         return _single_out_suggestion(remaining, darts_remaining)
     return _double_out_suggestion(remaining, darts_remaining)
+
+
+# ---------------------------------------------------------------------------
+# Persistence helpers (require an async DB session)
+# ---------------------------------------------------------------------------
+
+
+async def persist_visit(
+    db: object,
+    match_id: int,
+    player_id: int,
+    visit_number: int,
+    darts: list[Dart],
+    result: VisitResult,
+    events: list,
+) -> object:
+    """Persist a single visit and its detected special events to the database.
+
+    Args:
+        db:           Async SQLAlchemy session (must be committed by caller).
+        match_id:     DB id of the match this visit belongs to.
+        player_id:    DB id of the player who threw.
+        visit_number: Sequential visit number for this player in this match.
+        darts:        List of exactly 3 Dart objects (before bust zeroing).
+        result:       VisitResult from process_visit().
+        events:       Detected special events from detect_events().
+
+    Returns:
+        The newly created Visit ORM object (flushed but not committed).
+    """
+    from app.repositories.special_event_repo import create_special_event
+    from app.repositories.visit_repo import create_visit
+
+    visit = await create_visit(
+        db,
+        match_id=match_id,
+        player_id=player_id,
+        visit_number=visit_number,
+        dart1=darts[0].score,
+        dart2=darts[1].score,
+        dart3=darts[2].score,
+        total=result.total,
+        is_bust=result.is_bust,
+    )
+
+    for detected in events:
+        await create_special_event(
+            db,
+            visit_id=visit.id,
+            player_id=player_id,
+            event_type=detected.event_type,
+            bonus_value=detected.bonus_value,
+            count=detected.count,
+        )
+
+    return visit
