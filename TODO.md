@@ -110,7 +110,7 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 ### Starting Score with Handicap
 - [x] Before generating each KO match: call handicap calculator (Task 7)
 - [x] Store result in `Match.starting_score_p1` / `starting_score_p2`
-- [ ] Doubles KO: apply quartered handicap (deferred to Task 7 — handicap.py)
+- [x] Doubles KO: n/a — KO and Lightning rounds are singles only
 
 ### Tests
 - [x] Test qualification: 13 players, verify exactly 8 qualify, no overlap
