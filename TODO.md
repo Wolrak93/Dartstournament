@@ -125,16 +125,16 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/lightning-round`
 
 ### Scheduling (`backend/app/services/lightning.py`)
-- [ ] Pool of eliminated players grows as KO progresses
-- [ ] After each KO round: pair eliminated players for a Lightning match
-- [ ] Goal: every eliminated player plays one Lightning match per KO round (if possible)
-- [ ] Handle uneven pool sizes (bye for one player if odd count)
-- [ ] 301 points, Single-Out (no Double-Out required)
-- [ ] Track Lightning standings separately
+- [x] Pool of eliminated players grows as KO progresses
+- [x] After each KO round: pair eliminated players for a Lightning match
+- [x] Goal: every eliminated player plays one Lightning match per KO round (if possible)
+- [x] Handle uneven pool sizes (bye for one player if odd count)
+- [x] 301 points, Single-Out (no Double-Out required)
+- [x] Track Lightning standings separately
 
 ### Tests
-- [ ] Test with 5 eliminated players: correct pairing + 1 bye
-- [ ] Test Lightning schedule across 3 KO rounds
+- [x] Test with 5 eliminated players: correct pairing + 1 bye
+- [x] Test Lightning schedule across 3 KO rounds
 
 ---
 
