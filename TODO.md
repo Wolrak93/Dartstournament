@@ -12,26 +12,26 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/preflight-fixes`
 
 ### EventType Unification
-- [ ] Audit both `EventType` definitions:
+- [x] Audit both `EventType` definitions:
       `backend/app/models/special_event.py` (SQLAlchemy Enum, DB storage)
       `backend/app/services/events.py` (StrEnum, service layer)
-- [ ] Decide on canonical source:
+- [x] Decide on canonical source:
       → Keep `services/events.py` as the single source of truth
       → Update `models/special_event.py` to import and reuse the same values
-- [ ] Align naming convention between both (e.g. `GEWORFEN_180` vs `180_geworfen`)
-- [ ] Run full test suite — confirm all 307 tests still pass
+- [x] Align naming convention between both (e.g. `GEWORFEN_180` vs `180_geworfen`)
+- [x] Run full test suite — confirm all 307 tests still pass (311 pass incl. new)
 
 ### Bonus Points Wiring
-- [ ] Add call to `update_standing_bonus()` inside `record_match_result()`
+- [x] Add call to `update_standing_bonus()` inside `record_match_result()`
       OR extend `record_match_result()` signature to accept bonus events directly
-- [ ] Add inline TODO comment documenting the decision
-- [ ] Write regression test: verify bonus_points updates automatically on match result
+- [x] Add inline TODO comment documenting the decision
+- [x] Write regression test: verify bonus_points updates automatically on match result
 
 ### Test Utilities
-- [ ] Create `backend/tests/conftest.py` with shared fixtures:
+- [x] Create `backend/tests/conftest.py` with shared fixtures:
       - `_miss()` helper: returns `Dart(score=0, band=DartBand.MISS, number=0)`
       - `make_visit(d1, d2, d3)` convenience builder
-- [ ] Update any existing tests that manually construct MISS darts to use `_miss()`
+- [x] Update any existing tests that manually construct MISS darts to use `_miss()`
 
 ---
 
