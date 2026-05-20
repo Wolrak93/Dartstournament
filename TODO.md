@@ -40,30 +40,30 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/db-persistence`
 
 ### DB Session & Infrastructure
-- [ ] FastAPI dependency: `get_db()` yields async SQLAlchemy session
-- [ ] Ensure `database.py` calls `Base.metadata.create_all()` on startup
-- [ ] Verify all models are imported before `create_all` runs
+- [x] FastAPI dependency: `get_db()` yields async SQLAlchemy session
+- [x] Ensure `database.py` calls `Base.metadata.create_all()` on startup
+- [x] Verify all models are imported before `create_all` runs
 
 ### Repository Layer (`backend/app/repositories/`)
-- [ ] `player_repo.py`: create, get_by_id, list_all, update championship_count
-- [ ] `tournament_repo.py`: create, get_by_id (with players), update status
-- [ ] `tournament_player_repo.py`: add player to tournament, update reg/bonus/avg
-- [ ] `match_repo.py`: create, get_by_id, list_by_tournament, update status/winner
-- [ ] `visit_repo.py`: create visit, list_by_match_and_player
-- [ ] `special_event_repo.py`: create event, sum_bonus_by_player_and_tournament
+- [x] `player_repo.py`: create, get_by_id, list_all, update championship_count
+- [x] `tournament_repo.py`: create, get_by_id (with players), update status
+- [x] `tournament_player_repo.py`: add player to tournament, update reg/bonus/avg
+- [x] `match_repo.py`: create, get_by_id, list_by_tournament, update status/winner
+- [x] `visit_repo.py`: create visit, list_by_match_and_player
+- [x] `special_event_repo.py`: create event, sum_bonus_by_player_and_tournament
 
 ### Service Wiring
-- [ ] `vorrunde.py`: after match result, persist standings to `TournamentPlayer`
-- [ ] `ko.py`: persist bracket state (winner progression) to `Match` records
-- [ ] `lightning.py`: persist lightning match results and schedule
-- [ ] `match.py`: persist each `Visit` to DB; call event detection and persist `SpecialEvent`
-- [ ] `bonus.py`: read from `SpecialEvent` table instead of in-memory history
+- [x] `vorrunde.py`: after match result, persist standings to `TournamentPlayer`
+- [x] `ko.py`: persist bracket state (winner progression) to `Match` records
+- [x] `lightning.py`: persist lightning match results and schedule
+- [x] `match.py`: persist each `Visit` to DB; call event detection and persist `SpecialEvent`
+- [x] `bonus.py`: read from `SpecialEvent` table instead of in-memory history
 
 ### Tests
-- [ ] Integration tests using SQLite in-memory DB (`:memory:`)
-- [ ] Test: create player, tournament, add player, start tournament → verify DB state
-- [ ] Test: record visit → visit persisted, special event persisted if Vorrunde
-- [ ] Test: match result → standings updated in DB
+- [x] Integration tests using SQLite in-memory DB (`:memory:`)
+- [x] Test: create player, tournament, add player, start tournament → verify DB state
+- [x] Test: record visit → visit persisted, special event persisted if Vorrunde
+- [x] Test: match result → standings updated in DB
 
 ---
 
