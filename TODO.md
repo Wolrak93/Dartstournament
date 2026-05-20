@@ -1,267 +1,325 @@
-# TODO — Cycle 1: Foundation & Tournament Engine
+# TODO — Cycle 2: Main Screen UI & API Layer
 
-Backend logic only. No UI in this cycle.
-All tasks are implemented in separate feature branches branched from `development`.
+Referee-operated touch interface + FastAPI backend wiring.
+Backend tasks first (Tasks 10–13), then frontend (Tasks 14–20).
+All tasks implemented in separate feature branches from `development`.
 A task is only done when: code works, tests pass, user has approved, branch merged.
 
 ---
 
-## Task 1 — Project Scaffolding
+## Task 10 — Pre-flight: Resolve Cycle 1 Technical Debt
 
-**Branch:** `feature/project-scaffolding`
+**Branch:** `feature/preflight-fixes`
 
-### Backend
-- [x] Initialize uv project (`pyproject.toml`) with dependencies:
-      FastAPI, uvicorn, SQLAlchemy, aiosqlite, websockets, pytest, ruff
-- [x] Create `backend/app/main.py` with minimal FastAPI app (health endpoint)
-- [x] Set up SQLAlchemy async engine with SQLite (`backend/app/database.py`)
-- [x] Verify `ruff` linter runs cleanly on empty project
-- [x] Verify `pytest` runs (no tests yet, just confirms setup)
+### EventType Unification
+- [ ] Audit both `EventType` definitions:
+      `backend/app/models/special_event.py` (SQLAlchemy Enum, DB storage)
+      `backend/app/services/events.py` (StrEnum, service layer)
+- [ ] Decide on canonical source:
+      → Keep `services/events.py` as the single source of truth
+      → Update `models/special_event.py` to import and reuse the same values
+- [ ] Align naming convention between both (e.g. `GEWORFEN_180` vs `180_geworfen`)
+- [ ] Run full test suite — confirm all 307 tests still pass
 
-### Frontend
-- [x] Initialize Vite + React + TypeScript project in `frontend/`
-- [x] Install ESLint + Prettier, configure for Airbnb style
-- [x] Verify `npm run build` produces output without errors
-- [x] Verify `npm run lint` runs cleanly
+### Bonus Points Wiring
+- [ ] Add call to `update_standing_bonus()` inside `record_match_result()`
+      OR extend `record_match_result()` signature to accept bonus events directly
+- [ ] Add inline TODO comment documenting the decision
+- [ ] Write regression test: verify bonus_points updates automatically on match result
 
----
-
-## Task 2 — Data Models
-
-**Branch:** `feature/data-models`
-
-### SQLAlchemy Models (`backend/app/models/`)
-- [x] `Player`: id, name, photo_path, music_path, championship_count
-- [x] `Tournament`: id, created_at, player_count, mode (swiss/fixed), status
-- [x] `TournamentPlayer`: tournament_id, player_id, reg_points, bonus_points, avg_score
-- [x] `Match`: id, tournament_id, round_type (vorrunde/ko/lightning), round_number,
-      player1_id, player2_id, (optional) player3_id, player4_id,
-      starting_score_p1, starting_score_p2, winner_id, status
-- [x] `Visit`: id, match_id, player_id, dart1, dart2, dart3, total, is_bust, visit_number
-- [x] `SpecialEvent`: id, visit_id, player_id, event_type, bonus_value
-- [x] `BettingAccount`: id, player_id (nullable for spectators), name, balance
-- [x] `Bet`: id, match_id, account_id, amount, picked_player_id, payout
-
-### Pydantic Schemas (`backend/app/schemas/`)
-- [x] Schemas for all models (Create, Read, Update variants)
-- [x] Response schemas for API endpoints
-
-### Tests
-- [x] Test: create tournament with players, verify DB relations
-- [x] Test: all model constraints (nullable fields, foreign keys)
+### Test Utilities
+- [ ] Create `backend/tests/conftest.py` with shared fixtures:
+      - `_miss()` helper: returns `Dart(score=0, band=DartBand.MISS, number=0)`
+      - `make_visit(d1, d2, d3)` convenience builder
+- [ ] Update any existing tests that manually construct MISS darts to use `_miss()`
 
 ---
 
-## Task 3 — Vorrunde Logic
+## Task 11 — Backend: Database Integration (Persistence Layer)
 
-**Branch:** `feature/vorrunde-logic`
+**Branch:** `feature/db-persistence`
 
-### Player count & mode selection (`backend/app/services/vorrunde.py`)
-- [x] Helper: determine mode for n players
-      (n=10 or 12 → doubles eligible; n=9,11,13 → singles only)
-- [x] Helper: validate that n is between 9 and 13
+### DB Session & Infrastructure
+- [ ] FastAPI dependency: `get_db()` yields async SQLAlchemy session
+- [ ] Ensure `database.py` calls `Base.metadata.create_all()` on startup
+- [ ] Verify all models are imported before `create_all` runs
 
-### Fixed Draw
-- [x] Generate all pairings upfront at tournament start
-- [x] Singles (n=9,11,13): each player gets 3–4 opponents, no repeat pairings
-- [x] Doubles (n=10,12): each player gets 6 matches with a unique partner each time
-      (partner rotation: no player plays with same partner twice)
-- [x] Produce a schedule (ordered list of rounds, each round = parallel matches)
+### Repository Layer (`backend/app/repositories/`)
+- [ ] `player_repo.py`: create, get_by_id, list_all, update championship_count
+- [ ] `tournament_repo.py`: create, get_by_id (with players), update status
+- [ ] `tournament_player_repo.py`: add player to tournament, update reg/bonus/avg
+- [ ] `match_repo.py`: create, get_by_id, list_by_tournament, update status/winner
+- [ ] `visit_repo.py`: create visit, list_by_match_and_player
+- [ ] `special_event_repo.py`: create event, sum_bonus_by_player_and_tournament
 
-### Swiss System
-- [x] Round 1: random pairings
-- [x] Round N>1: pair players with similar point totals, avoid repeat pairings
-- [x] Bye handling if needed (odd number of non-doubles players in a round)
-- [x] Produce round-by-round schedule (next round generated after each round finishes)
-
-### Points Calculation
-- [x] Win: +1 point; Loss: +0 points
-- [x] After each match: compute 3-dart average for each player (total_score / visits / 3 * 3 = total/visits)
-      Wait — 3-dart average = total points scored / number of visits
-- [x] Add average × (1/100) to regular points
-- [x] Standings: sort by (regular_points + avg_bonus) desc, then by bonus_points desc as tiebreaker
+### Service Wiring
+- [ ] `vorrunde.py`: after match result, persist standings to `TournamentPlayer`
+- [ ] `ko.py`: persist bracket state (winner progression) to `Match` records
+- [ ] `lightning.py`: persist lightning match results and schedule
+- [ ] `match.py`: persist each `Visit` to DB; call event detection and persist `SpecialEvent`
+- [ ] `bonus.py`: read from `SpecialEvent` table instead of in-memory history
 
 ### Tests
-- [x] Test Swiss pairings for n=9,10,11,12,13 — no repeat pairings, correct match count
-- [x] Test fixed draw partner rotation (no duplicate partners in doubles)
-- [x] Test points calculation with sample match data
-- [x] Test standings ordering with tied regular points
+- [ ] Integration tests using SQLite in-memory DB (`:memory:`)
+- [ ] Test: create player, tournament, add player, start tournament → verify DB state
+- [ ] Test: record visit → visit persisted, special event persisted if Vorrunde
+- [ ] Test: match result → standings updated in DB
 
 ---
 
-## Task 4 — KO Bracket Logic
+## Task 12 — Backend: FastAPI REST Endpoints
 
-**Branch:** `feature/ko-bracket`
+**Branch:** `feature/api-endpoints`
 
-### Qualification (`backend/app/services/ko.py`)
-- [x] Sort players by regular points (desc)
-- [x] Top 6 qualify directly
-- [x] From remaining: sort by bonus_points (desc), take top 2
-- [x] Ensure no player appears in both lists (can't qualify via both channels)
-- [x] Seed 8 players into quarter-final bracket (1v8, 2v7, 3v6, 4v5)
+### Player Endpoints (`backend/app/routers/players.py`)
+- [ ] `GET /players` — list all players
+- [ ] `POST /players` — create player (name, photo_path, music_path, championship_count)
+- [ ] `GET /players/{id}` — get player
 
-### Bracket Progression
-- [x] Generate QF matches from seeding
-- [x] After each QF: winners → SF, losers → Lightning Round
-- [x] After each SF: winners → Final/3rd-place match, losers → Lightning Round
-- [x] Final: 2 legs (best of 2, tiebreak leg if 1-1?)
-- [x] Track bracket state: who is where at each stage
+### Tournament Endpoints (`backend/app/routers/tournaments.py`)
+- [ ] `POST /tournaments` — create tournament (player_ids, mode: swiss/fixed)
+- [ ] `GET /tournaments/{id}` — tournament with status, players, current round
+- [ ] `POST /tournaments/{id}/start` — generate Vorrunde schedule
+- [ ] `GET /tournaments/{id}/standings` — sorted standings (reg points + bonus)
+- [ ] `GET /tournaments/{id}/matches` — list all matches with status
+- [ ] `GET /tournaments/{id}/matches/next` — next unplayed match(es)
+- [ ] `POST /tournaments/{id}/ko/start` — run KO qualification, generate bracket
+- [ ] `GET /tournaments/{id}/ko/bracket` — full bracket with results
+- [ ] `GET /tournaments/{id}/lightning` — lightning round schedule and results
 
-### Starting Score with Handicap
-- [x] Before generating each KO match: call handicap calculator (Task 7)
-- [x] Store result in `Match.starting_score_p1` / `starting_score_p2`
-- [x] Doubles KO: n/a — KO and Lightning rounds are singles only
+### Match Endpoints (`backend/app/routers/matches.py`)
+- [ ] `POST /matches/{id}/bull-throw` — record distances, returns starting player
+- [ ] `POST /matches/{id}/start` — set match status to in_progress
+- [ ] `POST /matches/{id}/visits` — record visit: `{dart1, dart2, dart3, bounce_flags, robin_hood_flags}`
+- [ ] `GET /matches/{id}/state` — full match state: remaining per player, visit count, checkout suggestion, current player, mode
+- [ ] `POST /matches/{id}/finish` — force-finish (referee override)
+
+### Error Handling & Structure
+- [ ] Consistent error response schema: `{detail: str, code: str}`
+- [ ] 404 for missing resources, 409 for invalid state transitions, 422 for bad input
+- [ ] Include `backend/app/routers/__init__.py` and wire all routers into `main.py`
 
 ### Tests
-- [x] Test qualification: 13 players, verify exactly 8 qualify, no overlap
-- [x] Test edge case: player 6 and player 7 have same regular points (tiebreak)
-- [x] Test bracket seeding for 8 players
-- [x] Test that losers correctly feed into Lightning Round
+- [ ] API tests using FastAPI `TestClient` with in-memory DB fixture
+- [ ] Test each endpoint: happy path + main error cases
+- [ ] Test state machine: can't record visit before bull throw, can't start match twice
 
 ---
 
-## Task 5 — Lightning Round (Nebenrunde)
+## Task 13 — Backend: WebSocket Real-time Layer
 
-**Branch:** `feature/lightning-round`
+**Branch:** `feature/websocket`
 
-### Scheduling (`backend/app/services/lightning.py`)
-- [x] Pool of eliminated players grows as KO progresses
-- [x] After each KO round: pair eliminated players for a Lightning match
-- [x] Goal: every eliminated player plays one Lightning match per KO round (if possible)
-- [x] Handle uneven pool sizes (bye for one player if odd count)
-- [x] 301 points, Single-Out (no Double-Out required)
-- [x] Track Lightning standings separately
+### Connection Manager (`backend/app/websocket/manager.py`)
+- [ ] `ConnectionManager` class: connect, disconnect, broadcast_to_match, broadcast_to_tournament
+- [ ] Support multiple clients per match/tournament channel
+- [ ] Thread-safe client registry
+
+### WebSocket Endpoints (`backend/app/routers/ws.py`)
+- [ ] `WS /ws/match/{match_id}` — real-time match state
+      - On connect: send current match state immediately (`match_state` event)
+      - On each new visit: broadcast `score_update` + `special_event` (if any)
+      - On match finish: broadcast `match_finished`
+- [ ] `WS /ws/tournament/{tournament_id}` — tournament-level updates
+      - On connect: send current standings + next matches
+      - On standings change: broadcast `standings_update`
+      - On bracket change: broadcast `bracket_update`
+
+### Event Protocol (outgoing JSON)
+- [ ] `{ type: "match_state", data: { remaining_p1, remaining_p2, current_player, visit_count, checkout_suggestion, single_out_mode } }`
+- [ ] `{ type: "score_update", data: { player_id, scored, remaining, is_bust } }`
+- [ ] `{ type: "special_event", data: { player_id, events: [{name, bonus_value}] } }`
+- [ ] `{ type: "match_finished", data: { winner_id, final_score_p1, final_score_p2 } }`
+- [ ] `{ type: "standings_update", data: [ {player_id, reg_points, bonus_points, avg} ] }`
+- [ ] `{ type: "bracket_update", data: { quarter_finals, semi_finals, final, third_place } }`
+
+### Reconnect Handling
+- [ ] Client re-subscribes and receives full current state on re-connect (no missed events needed)
 
 ### Tests
-- [x] Test with 5 eliminated players: correct pairing + 1 bye
-- [x] Test Lightning schedule across 3 KO rounds
+- [ ] Test WebSocket connect → receives initial state
+- [ ] Test visit recorded via REST → WebSocket clients receive broadcast
+- [ ] Test disconnect handling (no crash on stale connection)
 
 ---
 
-## Task 6 — Match Flow Engine
+## Task 14 — Frontend: App Shell & Tournament Setup
 
-**Branch:** `feature/match-flow`
+**Branch:** `feature/frontend-setup`
 
-### Bull Throw (`backend/app/services/match.py`)
-- [x] Record bull distance for each player/team
-- [x] Determine starting player (closest to bull goes first)
-- [x] Tie handling: re-throw (store multiple rounds if needed)
+### App Shell
+- [ ] React Router v6 setup with routes for all screens:
+      `/setup`, `/bull-throw/:matchId`, `/score/:matchId`, `/walkon/:matchId`,
+      `/standings`, `/bracket`, `/lightning`
+- [ ] Global tournament context (React Context API): tournament_id, current match, standings
+- [ ] `useWebSocket(channel, matchId|tournamentId)` custom hook:
+      connects, parses events, exposes state, handles reconnect
+- [ ] `apiClient` utility: typed `fetch` wrapper for all REST endpoints
 
-### Score Entry & Validation
-- [x] Accept a visit: (dart1, dart2, dart3) as individual values OR total
-- [x] Validate each dart: 0–60 (single fields), double fields, triple fields, bull (25/50)
-- [x] Compute visit total
-- [x] Bust detection: if remaining - total < 0, OR remaining - total == 1 (can't finish on 1 in Double-Out),
-      OR total > remaining → bust, visit scores 0, player keeps current remaining
-- [x] Double-Out check: final dart must be a double (or bullseye=D25) — else bust
-- [x] Single-Out fallback: after visit limit (15 Vorrunde, 25 KO), switch to Single-Out rules
+### Tournament Setup Screen (`/setup`)
+- [ ] Fetch player list from `GET /players`
+- [ ] Touch-friendly player selection (checkbox list with photos)
+- [ ] Player count validation (9–13; show error otherwise)
+- [ ] Mode toggle: Swiss / Fixed draw
+- [ ] "Start Tournament" button → `POST /tournaments` + `POST /tournaments/{id}/start`
+- [ ] Navigate to standings/overview on success
 
-### Checkout Suggestion
-- [x] For each remaining score (2–170): precompute optimal checkout path
-      (max 3 darts, standard dartboard, prefer known checkouts)
-- [x] Return suggestion(s) for current remaining score
-- [x] Handle scores with no 1-dart or 2-dart finish (show 3-dart path)
-- [x] Return empty suggestion if no checkout possible in 3 darts
-
-### Single-Out Fallback Trigger
-- [x] Track visit count per player per leg
-- [x] After visit 15 (Vorrunde) or 25 (KO): set match flag `single_out_mode = True`
-- [x] In Single-Out mode: player may finish on any field (no double required)
-- [x] Bust still applies (can't overshoot)
-
-### Tests
-- [x] Test bust: player on 32, throws 33 → bust, score unchanged
-- [x] Test Double-Out: player on 32, throws D16 → valid finish
-- [x] Test Double-Out: player on 32, throws S16 → bust
-- [x] Test Single-Out fallback triggers at correct visit count
-- [x] Test checkout suggestions for common scores (170, 121, 40, 2)
-- [x] Test bull throw: tie goes to re-throw
+### Tests (Vitest + React Testing Library)
+- [ ] Setup screen: renders player list, validates count, calls API on submit
 
 ---
 
-## Task 7 — Handicap Calculator
+## Task 15 — Frontend: Bull Throw Screen
 
-**Branch:** `feature/handicap`
+**Branch:** `feature/frontend-bull-throw`
 
-### Logic (`backend/app/services/handicap.py`)
-- [x] Input: championship count of player A, championship count of player B
-- [x] Difference = abs(A - B)
-- [x] If difference < 3: no handicap
-- [x] If difference >= 3: stronger player's starting score += 100 + (difference - 3) * 40
-      (e.g. diff=3 → +100, diff=4 → +140, diff=5 → +180)
-- [x] Doubles (2v2): compute 4 pairwise comparisons (p1 vs p3, p1 vs p4, p2 vs p3, p2 vs p4),
-      sum all handicap values, divide by 4 (round to nearest integer)
-- [x] Return adjusted starting scores for both sides
+### Screen (`/bull-throw/:matchId`)
+- [ ] Fetch match state (player names, photos)
+- [ ] Display both players/teams side by side
+- [ ] Touch-friendly distance input per player (numeric, in mm or arbitrary units)
+- [ ] Submit → `POST /matches/{id}/bull-throw` → receive `starting_player_id`
+- [ ] Tie handling: show "Tie — re-throw" prompt, reset inputs
+- [ ] Display result: "Player X throws first"
+- [ ] "Continue" button → navigate to Walk-on (KO/Lightning) or Score Entry (Vorrunde)
 
 ### Tests
-- [x] diff=0 → no handicap
-- [x] diff=2 → no handicap
-- [x] diff=3 → stronger side +100
-- [x] diff=5 → stronger side +180
-- [x] doubles: mixed championship counts, verify quartered result
+- [ ] Renders both players, submits distances, shows result, handles tie
 
 ---
 
-## Task 8 — Special Events Detection
+## Task 16 — Frontend: Score Entry Screen
 
-**Branch:** `feature/special-events`
+**Branch:** `feature/frontend-score-entry`
 
-### Detection Engine (`backend/app/services/events.py`)
-- [x] Input: visit (dart1, dart2, dart3), remaining_before, remaining_after, match context
-- [x] Detect and return list of all triggered events per visit
-- [x] Implement each of the 18 events:
-
-| Event | Detection logic |
-|---|---|
-| 26 geworfen | visit total == 26 |
-| 180 geworfen | visit total == 180 |
-| 170 Rest | remaining_after == 170 |
-| Kack-Rest | remaining_after in [2, 3]; re-check if 3→threw 1→remaining now 2 |
-| Bogey | remaining_after in [159,162,163,165,166,168,169] |
-| Tripel | any dart lands in triple ring (value = triple field × 3) — count occurrences |
-| Tripel 20 | any dart == T20 (60) — count occurrences |
-| Bull | any dart == single bull (25) — count occurrences |
-| Bulls Eye | any dart == bullseye (50) — count occurrences |
-| Bounce | any dart flagged as bounce (referee input) — count occurrences |
-| Robin Hood | any dart flagged as robin hood (referee input) — count occurrences |
-| BE Finish | finish (remaining_after == 0) AND finishing dart == bullseye |
-| odd Finish | finish AND finishing double is an odd number (D1,D3,...,D19) |
-| Double Double | count of darts landing on any double field >= 2 |
-| Mad House | finish AND finishing dart == D1 |
-| Shanghai | all 3 darts land on same number (any of S/D/T of that number) |
-| Bust | visit is a bust |
-| Doppel-Treffer | any dart lands on a double field (not bust) — count occurrences |
-| Gleiche Zahl | all 3 darts land in same numbered section (any band) |
-
-- [x] Bonus points only stored if match is in Vorrunde phase
-- [x] Events that can trigger multiple times per visit: return count × value
+### Screen (`/score/:matchId`)
+- [ ] Connect to `WS /ws/match/{matchId}` via `useWebSocket` hook
+- [ ] Score display panel: remaining score per player (large digits)
+- [ ] Current player indicator (highlighted name/side)
+- [ ] Visit counter per player
+- [ ] Large touch numpad: digits 0–9, DEL (backspace), CONFIRM
+      - Input: up to 3 digits; shows running total as typed
+      - CONFIRM → `POST /matches/{id}/visits`
+- [ ] Checkout suggestion panel: shown when remaining ≤ 170
+- [ ] Single-Out warning banner: shown after visit 15 (Vorrunde) or 25 (KO)
+- [ ] Bust feedback: red flash on score display, "BUST" overlay (auto-dismiss)
+- [ ] Match finished overlay: "Winner: [Name]", final scores, "Next Match" button
+- [ ] Special event popup: rendered as overlay (see Task 17)
+- [ ] Audio playback on confirmed visit (see Task 18)
 
 ### Tests
-- [x] Test each of the 18 events with a crafted visit
-- [x] Test combined events (e.g. Mad House also triggers odd Finish)
-- [x] Test Bounce/Robin Hood (manual flag input path)
-- [x] Test: KO match → events detected but bonus_value = 0
+- [ ] Numpad input → formats score correctly → calls API
+- [ ] Bust: shows bust overlay, score unchanged
+- [ ] Checkout suggestion: updates on each WebSocket `score_update`
+- [ ] Single-Out banner: appears at correct visit count
 
 ---
 
-## Task 9 — Bonus Points Aggregation
+## Task 17 — Frontend: Special Event Popup
 
-**Branch:** `feature/bonus-points`
+**Branch:** `feature/frontend-events-popup`
 
-### Aggregation (`backend/app/services/bonus.py`)
-- [x] Sum all SpecialEvent.bonus_value per player per tournament (Vorrunde only)
-- [x] Expose total bonus points per player for standings and KO qualification
-- [x] Real-time update: recalculate after each visit
+### Popup Component
+- [ ] Fullscreen overlay rendered above Score Entry screen
+- [ ] Triggered by `special_event` WebSocket message
+- [ ] Per event: show event name + animated counter (0 → bonus_value)
+      - Positive values: count up (green); negative: count down (red)
+- [ ] Multiple events per visit: show sequentially (queue, not stacked)
+- [ ] Auto-dismiss after animation completes (no manual dismiss needed)
+- [ ] Dismisses to Score Entry screen state underneath
 
 ### Tests
-- [x] Test running total updates correctly after each visit
-- [x] Test KO events produce 0 bonus (not added to total)
+- [ ] Renders single event, completes animation, dismisses
+- [ ] Queue: two events shown in order
+
+---
+
+## Task 18 — Frontend: Audio Playback
+
+**Branch:** `feature/frontend-audio`
+
+### Audio Manager
+- [ ] Preload MP3 files from `user_input/sound/` on app start
+      - Score files: `0.mp3` through `180.mp3` (verify available filenames)
+      - Bust sound: if a bust MP3 exists, play on bust; otherwise skip
+- [ ] `playScore(total: number)` — plays matching MP3 after visit confirmed
+- [ ] `playBust()` — plays bust sound if available
+- [ ] No overlap: cancel any currently playing sound before starting new one
+- [ ] Graceful fallback: if file missing, log warning and continue silently
+- [ ] Hook `useAudio()` for use in Score Entry screen
+
+### Tests
+- [ ] `playScore(180)` calls correct audio file
+- [ ] Overlap: second call cancels first
+
+---
+
+## Task 19 — Frontend: Walk-on Screen
+
+**Branch:** `feature/frontend-walkon`
+
+### Screen (`/walkon/:matchId`)
+- [ ] Fetch match state: get player IDs, map to photo + music assets
+- [ ] Fullscreen layout:
+      - Player photo (full bleed or centered large)
+      - Player name overlay (large text)
+      - Background: dark/dramatic
+- [ ] Auto-play walk-on music from `user_input/music/` on screen mount
+- [ ] Stop music when referee taps "Ready" button (or on navigate away)
+- [ ] Trigger: navigate here before KO and Lightning Round matches only
+      (Vorrunde matches go directly to Bull Throw)
+- [ ] "Ready — Continue" button → navigate to Bull Throw screen
+
+### Player → Asset Mapping
+- [ ] Define mapping for all known players (Philipp, Mike, Henrik, Lars, Joachim,
+      Jonas, Janni, Jens, Elina, Lena) to their photo + music files
+- [ ] Fallback: blank photo and no music if player has no assets
+
+### Tests
+- [ ] Screen mounts → music plays, photo shown
+- [ ] "Ready" → music stops, navigates to bull throw
+
+---
+
+## Task 20 — Frontend: Tournament Overview Screens
+
+**Branch:** `feature/frontend-overview`
+
+### Vorrunde Standings (`/standings`)
+- [ ] Connect to `WS /ws/tournament/{id}` for live updates
+- [ ] Standings table: rank, name, regular points, bonus points, average
+- [ ] Sorted: reg_points desc, bonus_points as tiebreaker
+- [ ] Highlight top 6 (KO direct) and positions 7–8 (bonus-point wildcard candidates)
+- [ ] Auto-update on `standings_update` WebSocket event
+
+### KO Bracket (`/bracket`)
+- [ ] Visual bracket: QF → SF → Final + 3rd-place match
+- [ ] Each slot: player name, result (if played), TBD (if not yet)
+- [ ] Auto-update on `bracket_update` WebSocket event
+
+### Lightning Round (`/lightning`)
+- [ ] List of lightning matches per KO round
+- [ ] Each entry: player names, status (pending/in progress/done), winner
+
+### Next Matches Panel (shared component)
+- [ ] Shows upcoming unplayed matches in order
+- [ ] Used on standings and bracket screens as a sidebar/section
+- [ ] Updates live via WebSocket
+
+### Navigation
+- [ ] Persistent nav bar or tab strip (Standings | KO Bracket | Lightning)
+- [ ] Accessible from score entry screen (referee can check standings between matches)
+
+### Tests
+- [ ] Standings table: sorted correctly, highlights correct rows
+- [ ] Bracket: renders all 8 slots, shows result when match played
+- [ ] WebSocket update: standings re-render on new data
 
 ---
 
 ## Notes for All Feature Branches
 
-- Each branch is created from `development`
-- All new code must pass `ruff` (backend) and `eslint` (frontend) with no errors
-- Each task needs at least the tests listed above before being considered done
+- Branches created from `development`
+- Backend: must pass `ruff` with no errors + all tests green
+- Frontend: must pass `eslint`/`prettier` with no errors + Vitest tests pass
 - Present work to user for review before merging into `development`
+- Manual test instructions required for each task (Lesson 1 from Cycle 1)
