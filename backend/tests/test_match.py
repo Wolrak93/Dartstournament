@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from app.services.match import (
+    CheckoutSuggestion,
     Dart,
     DartBand,
     VisitResult,
@@ -246,60 +247,91 @@ class TestSingleOutFallback:
 
 
 # ---------------------------------------------------------------------------
-# Checkout suggestion tests
+# Checkout suggestion tests — Double-Out (default)
 # ---------------------------------------------------------------------------
 
 
-class TestCheckoutSuggestions:
+class TestCheckoutSuggestionsDoubleOut:
     def test_170_checkout(self) -> None:
         """170 = T20, T20, Bullseye (classic Big Fish)."""
-        suggestion = get_checkout_suggestion(170)
-        assert len(suggestion) == 3
-        assert suggestion[-1] == "Bullseye"
+        s = get_checkout_suggestion(170)
+        assert s is not None
+        assert s.is_finish is True
+        assert len(s.darts) == 3
+        assert s.darts[-1] == "Bullseye"
+        assert s.leave == 0
 
     def test_40_checkout(self) -> None:
         """40 = D20 (one-dart finish)."""
-        suggestion = get_checkout_suggestion(40)
-        assert suggestion == ["D20"]
+        s = get_checkout_suggestion(40)
+        assert s is not None
+        assert s.is_finish is True
+        assert s.darts == ["D20"]
 
     def test_2_checkout(self) -> None:
         """2 = D1 (one-dart finish)."""
-        suggestion = get_checkout_suggestion(2)
-        assert suggestion == ["D1"]
+        s = get_checkout_suggestion(2)
+        assert s is not None
+        assert s.is_finish is True
+        assert s.darts == ["D1"]
 
     def test_121_checkout(self) -> None:
-        """121 = T20, T11, D? or similar 3-dart path."""
-        suggestion = get_checkout_suggestion(121)
-        assert len(suggestion) in (2, 3)
-        # Final dart must be a double
-        last = suggestion[-1]
-        assert last.startswith("D") or last == "Bullseye"
+        """121 is a valid 3-dart Double-Out score."""
+        s = get_checkout_suggestion(121)
+        assert s is not None
+        assert s.is_finish is True
+        assert len(s.darts) in (2, 3)
+        assert s.darts[-1].startswith("D") or s.darts[-1] == "Bullseye"
 
-    def test_no_checkout_above_170(self) -> None:
-        assert get_checkout_suggestion(171) == []
-        assert get_checkout_suggestion(500) == []
+    def test_50_checkout_1dart(self) -> None:
+        """50 with 1 dart remaining = Bullseye (only option)."""
+        s = get_checkout_suggestion(50, darts_remaining=1)
+        assert s is not None
+        assert s.is_finish is True
+        assert s.darts == ["Bullseye"]
+
+    def test_50_checkout_3darts(self) -> None:
+        """50 with 3 darts remaining = S18 D16 (user table preference)."""
+        s = get_checkout_suggestion(50, darts_remaining=3)
+        assert s is not None
+        assert s.is_finish is True
+        # Table prefers S18+D16 over Bullseye when 3 darts are available
+        assert len(s.darts) <= 3
+        assert s.leave == 0
 
     def test_no_checkout_for_1(self) -> None:
-        assert get_checkout_suggestion(1) == []
+        """Score 1 has no valid Double-Out checkout."""
+        assert get_checkout_suggestion(1) is None
 
-    def test_50_checkout(self) -> None:
-        """50 = Bullseye (one-dart finish)."""
-        suggestion = get_checkout_suggestion(50)
-        assert suggestion == ["Bullseye"]
+    def test_no_checkout_above_230(self) -> None:
+        """Scores above 230 are outside the display range."""
+        assert get_checkout_suggestion(231) is None
+        assert get_checkout_suggestion(500) is None
 
-    def test_all_valid_scores_2_to_170_have_suggestion_or_empty(self) -> None:
-        """Smoke test: no crash and each result is a list."""
-        for score in range(2, 171):
-            result = get_checkout_suggestion(score)
-            assert isinstance(result, list)
-            if result:
-                last = result[-1]
-                assert last.startswith("D") or last == "Bullseye", (
-                    f"Checkout for {score} ends on non-double: {result}"
-                )
+    def test_setup_shot_above_170(self) -> None:
+        """Scores 171–230 return setup shots (is_finish=False)."""
+        s = get_checkout_suggestion(171)
+        assert s is not None
+        assert s.is_finish is False
+        assert len(s.darts) >= 1
 
-    def test_checkout_sum_equals_target(self) -> None:
-        """Verify that suggested darts actually sum to the target score."""
+    def test_setup_shot_195_one_dart(self) -> None:
+        """195 with 1 dart → setup shot that leaves a checkable score."""
+        s = get_checkout_suggestion(195, darts_remaining=1)
+        assert s is not None
+        assert s.is_finish is False
+        assert 2 <= s.leave <= 170
+
+    def test_bogey_has_setup_shot(self) -> None:
+        """Bogey numbers can't be finished, but return a setup-shot suggestion."""
+        for score in [159, 162, 163, 165, 166, 168, 169]:
+            s = get_checkout_suggestion(score)
+            assert s is not None, f"Expected setup shot for bogey {score}"
+            assert s.is_finish is False, f"Bogey {score} should not be a finish"
+
+    def test_finish_sum_equals_target(self) -> None:
+        """For all finishing suggestions 2–170, darts must sum to target."""
+
         def parse_score(label: str) -> int:
             if label == "Bullseye":
                 return 50
@@ -314,15 +346,123 @@ class TestCheckoutSuggestions:
             return int(label)
 
         for score in range(2, 171):
-            result = get_checkout_suggestion(score)
-            if result:
-                total = sum(parse_score(d) for d in result)
-                assert total == score, f"Checkout {result} sums to {total}, not {score}"
+            s = get_checkout_suggestion(score)
+            if s is not None and s.is_finish:
+                total = sum(parse_score(d) for d in s.darts)
+                assert total == score, (
+                    f"Checkout {s.darts} sums to {total}, not {score}"
+                )
 
-    def test_unreachable_scores_have_no_suggestion(self) -> None:
-        """Certain scores cannot be checked out in 3 darts (bogey numbers)."""
-        # These are known impossible checkouts
-        impossible = {159, 162, 163, 165, 166, 168, 169}
-        for score in impossible:
-            result = get_checkout_suggestion(score)
-            assert result == [], f"Expected no checkout for {score}, got {result}"
+    def test_finish_ends_on_double(self) -> None:
+        """All finishing suggestions must end on a double."""
+        for score in range(2, 171):
+            s = get_checkout_suggestion(score)
+            if s is not None and s.is_finish:
+                last = s.darts[-1]
+                assert last.startswith("D") or last == "Bullseye", (
+                    f"Score {score}: checkout {s.darts} ends on non-double '{last}'"
+                )
+
+    def test_darts_remaining_1_gives_at_most_1_dart(self) -> None:
+        """With darts_remaining=1, suggestion has exactly 1 dart."""
+        for score in [40, 50, 100, 121, 170]:
+            s = get_checkout_suggestion(score, darts_remaining=1)
+            if s is not None:
+                assert len(s.darts) == 1, (
+                    f"Score {score} darts_remaining=1: expected 1 dart, got {s.darts}"
+                )
+
+    def test_darts_remaining_2_gives_at_most_2_darts(self) -> None:
+        """With darts_remaining=2, suggestion has at most 2 darts."""
+        for score in [40, 50, 100, 121, 170]:
+            s = get_checkout_suggestion(score, darts_remaining=2)
+            if s is not None:
+                assert len(s.darts) <= 2, (
+                    f"Score {score} darts_remaining=2: too many darts {s.darts}"
+                )
+
+    def test_smoke_all_scores_2_to_170(self) -> None:
+        """No crash and each result is either None or a valid CheckoutSuggestion."""
+        for score in range(2, 171):
+            s = get_checkout_suggestion(score)
+            assert s is None or isinstance(s, CheckoutSuggestion)
+            if s is not None:
+                assert isinstance(s.darts, list)
+                assert isinstance(s.is_finish, bool)
+                assert isinstance(s.leave, int)
+
+
+# ---------------------------------------------------------------------------
+# Checkout suggestion tests — Single-Out
+# ---------------------------------------------------------------------------
+
+
+class TestCheckoutSuggestionsSingleOut:
+    def test_single_out_finish_on_single(self) -> None:
+        """20 = S20 in Single-Out (no double required)."""
+        s = get_checkout_suggestion(20, single_out=True)
+        assert s is not None
+        assert s.is_finish is True
+        assert s.darts == ["S20"]
+
+    def test_single_out_finish_on_bull(self) -> None:
+        """25 = Bull in Single-Out."""
+        s = get_checkout_suggestion(25, single_out=True)
+        assert s is not None
+        assert s.is_finish is True
+        assert s.darts == ["Bull"]
+
+    def test_single_out_finish_on_bullseye(self) -> None:
+        """50 = Bullseye in Single-Out (same as Double-Out)."""
+        s = get_checkout_suggestion(50, single_out=True)
+        assert s is not None
+        assert s.is_finish is True
+        assert s.darts == ["Bullseye"]
+
+    def test_single_out_finish_on_triple(self) -> None:
+        """60 = T20 in Single-Out (max 1-dart score)."""
+        s = get_checkout_suggestion(60, single_out=True)
+        assert s is not None
+        assert s.is_finish is True
+        assert s.darts == ["T20"]
+
+    def test_single_out_3_darts_returns_suggestion(self) -> None:
+        """301 starting score; 3-dart suggestion for common remaining values."""
+        for score in [80, 100, 121, 160, 180]:
+            s = get_checkout_suggestion(score, darts_remaining=3, single_out=True)
+            assert s is not None, f"Expected suggestion for single-out {score}"
+
+    def test_single_out_above_180_returns_setup_shot(self) -> None:
+        """Scores > 180 in single-out mode return setup shots (e.g. for 301 start)."""
+        s = get_checkout_suggestion(181, single_out=True)
+        assert s is not None
+        assert s.is_finish is False
+
+    def test_single_out_zero_or_negative_returns_none(self) -> None:
+        """Score 0 or below has no suggestion."""
+        assert get_checkout_suggestion(0, single_out=True) is None
+        assert get_checkout_suggestion(-1, single_out=True) is None
+
+    def test_single_out_finish_sum_correct(self) -> None:
+        """For all finishing single-out suggestions 1–60, darts must sum to target."""
+
+        def parse_score(label: str) -> int:
+            if label == "Bullseye":
+                return 50
+            if label == "Bull":
+                return 25
+            if label.startswith("T"):
+                return int(label[1:]) * 3
+            if label.startswith("D"):
+                return int(label[1:]) * 2
+            if label.startswith("S"):
+                return int(label[1:])
+            return int(label)
+
+        for score in range(1, 61):
+            s = get_checkout_suggestion(score, single_out=True)
+            if s is not None and s.is_finish:
+                total = sum(parse_score(d) for d in s.darts)
+                assert total == score, (
+                    f"Single-Out checkout {s.darts} sums to {total}, not {score}"
+                )
