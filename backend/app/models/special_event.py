@@ -1,31 +1,12 @@
-import enum
-
 from sqlalchemy import Enum, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
-
-class EventType(enum.StrEnum):
-    score_26 = "score_26"
-    score_180 = "score_180"
-    rest_170 = "rest_170"
-    kack_rest = "kack_rest"
-    bogey = "bogey"
-    tripel = "tripel"
-    tripel_20 = "tripel_20"
-    bull = "bull"
-    bulls_eye = "bulls_eye"
-    bounce = "bounce"
-    robin_hood = "robin_hood"
-    be_finish = "be_finish"
-    odd_finish = "odd_finish"
-    double_double = "double_double"
-    mad_house = "mad_house"
-    shanghai = "shanghai"
-    bust = "bust"
-    doppel_treffer = "doppel_treffer"
-    gleiche_zahl = "gleiche_zahl"
+# Single source of truth: EventType lives in the service layer.
+# The model re-exports it so that schema and test imports via
+# `app.models.special_event` continue to work without changes.
+from app.services.events import EventType as EventType  # noqa: F401
 
 
 class SpecialEvent(Base):

@@ -16,6 +16,10 @@ from dataclasses import (
     dataclass,
     field,
 )
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.services.events import DetectedEvent
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -467,6 +471,12 @@ def record_match_result(
     winner_team: int,  # 1 or 2
     scores: dict[int, int],   # player_id → dart points scored in this match
     visits: dict[int, int],   # player_id → number of visits thrown
+    bonus_events: dict[int, list[DetectedEvent]] | None = None,
+    # bonus_events: pass per-player event lists from the Vorrunde to have
+    # update_standing_bonus() called automatically here.  When None (KO /
+    # Lightning rounds, or callers that have not yet migrated) bonus_points
+    # are left unchanged.  This is the preferred injection point so that
+    # callers never have to call update_standing_bonus() separately.
 ) -> None:
     """Update standings after a completed match.
 
@@ -476,6 +486,9 @@ def record_match_result(
         winner_team: 1 if team1 won, 2 if team2 won.
         scores: Per-player dart points scored (used for individual average).
         visits: Per-player visit count.
+        bonus_events: Optional per-player event lists (Vorrunde only).
+            When provided, bonus_points are updated automatically via
+            update_standing_bonus().
     """
     if winner_team not in {1, 2}:
         raise ValueError("winner_team must be 1 or 2.")
@@ -499,6 +512,13 @@ def record_match_result(
         # No reg_points for a loss
         s.total_score += scores[pid]
         s.total_visits += visits[pid]
+
+    if bonus_events is not None:
+        from app.services.bonus import update_standing_bonus  # avoid circular import
+
+        for pid in all_players:
+            if pid in bonus_events:
+                update_standing_bonus(state.standings[pid], bonus_events[pid])
 
 
 def get_standings(state: SwissState) -> list[PlayerStanding]:

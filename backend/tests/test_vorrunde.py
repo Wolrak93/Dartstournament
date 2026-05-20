@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from app.services.events import DetectedEvent, EventType
 from app.services.vorrunde import (
     MatchPairing,
     SwissState,
@@ -380,3 +381,81 @@ class TestStandingsOrdering:
         state.standings[2].total_visits = 10  # avg=10, bonus=0.1
         standings = get_standings(state)
         assert standings[0].player_id == 1
+
+
+# ---------------------------------------------------------------------------
+# Regression: bonus_points updated automatically via record_match_result()
+# ---------------------------------------------------------------------------
+
+
+class TestBonusPointsWiring:
+    """Verify that bonus_events passed to record_match_result() are applied."""
+
+    def _make_pairing(self) -> MatchPairing:
+        return MatchPairing(round_number=1, team1=[1], team2=[2])
+
+    def test_bonus_events_update_winner_bonus_points(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = self._make_pairing()
+        ev26 = DetectedEvent(event_type=EventType.GEWORFEN_26, count=1, bonus_value=26)
+        bonus_events = {1: [ev26], 2: []}
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+            bonus_events=bonus_events,
+        )
+        assert state.standings[1].bonus_points == 26
+        assert state.standings[2].bonus_points == 0
+
+    def test_bonus_events_update_loser_bonus_points(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = self._make_pairing()
+        ev180 = DetectedEvent(
+            event_type=EventType.GEWORFEN_180, count=1, bonus_value=1800
+        )
+        bonus_events = {1: [], 2: [ev180]}
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+            bonus_events=bonus_events,
+        )
+        assert state.standings[1].bonus_points == 0
+        assert state.standings[2].bonus_points == 1800
+
+    def test_no_bonus_events_leaves_bonus_points_unchanged(self):
+        """Without bonus_events the existing bonus_points must be preserved."""
+        state = SwissState(player_ids=[1, 2])
+        state.standings[1].bonus_points = 42
+        pairing = self._make_pairing()
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+        )
+        assert state.standings[1].bonus_points == 42
+        assert state.standings[2].bonus_points == 0
+
+    def test_negative_bonus_events_reduce_points(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = self._make_pairing()
+        bonus_events = {
+            1: [DetectedEvent(event_type=EventType.BUST, count=2, bonus_value=-2)],
+            2: [],
+        }
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+            bonus_events=bonus_events,
+        )
+        assert state.standings[1].bonus_points == -2
