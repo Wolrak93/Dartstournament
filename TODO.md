@@ -106,40 +106,40 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 
 ---
 
-## Task 13 — Backend: WebSocket Real-time Layer
+## Task 13 — Backend: WebSocket Real-time Layer ✅
 
-**Branch:** `feature/websocket`
+**Branch:** `feature/websocket` → merged into `development`
 
-### Connection Manager (`backend/app/websocket/manager.py`)
-- [ ] `ConnectionManager` class: connect, disconnect, broadcast_to_match, broadcast_to_tournament
-- [ ] Support multiple clients per match/tournament channel
-- [ ] Thread-safe client registry
+### Connection Manager (`backend/app/websocket.py`)
+- [x] `ConnectionManager` class: connect, disconnect, broadcast_match, broadcast_tournament
+- [x] Support multiple clients per match/tournament channel
+- [x] Dead-connection cleanup on every broadcast (asyncio-safe)
 
 ### WebSocket Endpoints (`backend/app/routers/ws.py`)
-- [ ] `WS /ws/match/{match_id}` — real-time match state
+- [x] `WS /ws/match/{match_id}` — real-time match state
       - On connect: send current match state immediately (`match_state` event)
-      - On each new visit: broadcast `score_update` + `special_event` (if any)
+      - On each new visit: broadcast `score_update` + `special_event` (per event)
       - On match finish: broadcast `match_finished`
-- [ ] `WS /ws/tournament/{tournament_id}` — tournament-level updates
-      - On connect: send current standings + next matches
+- [x] `WS /ws/tournament/{tournament_id}` — tournament-level updates
+      - On connect: send `standings_update` (client fetches fresh data via REST)
       - On standings change: broadcast `standings_update`
       - On bracket change: broadcast `bracket_update`
 
 ### Event Protocol (outgoing JSON)
-- [ ] `{ type: "match_state", data: { remaining_p1, remaining_p2, current_player, visit_count, checkout_suggestion, single_out_mode } }`
-- [ ] `{ type: "score_update", data: { player_id, scored, remaining, is_bust } }`
-- [ ] `{ type: "special_event", data: { player_id, events: [{name, bonus_value}] } }`
-- [ ] `{ type: "match_finished", data: { winner_id, final_score_p1, final_score_p2 } }`
-- [ ] `{ type: "standings_update", data: [ {player_id, reg_points, bonus_points, avg} ] }`
-- [ ] `{ type: "bracket_update", data: { quarter_finals, semi_finals, final, third_place } }`
+- [x] `{ type: "match_state", data: { match_id, status, round_type, player1_id, player2_id, ... } }`
+- [x] `{ type: "score_update", data: { player_id, total, remaining_after, is_bust, special_events } }`
+- [x] `{ type: "special_event", data: { player_id, event_type, bonus_value, count } }`
+- [x] `{ type: "match_finished", data: { match_id, winner_id } }`
+- [x] `{ type: "standings_update", data: { tournament_id } }`
+- [x] `{ type: "bracket_update", data: { tournament_id } }`
 
 ### Reconnect Handling
-- [ ] Client re-subscribes and receives full current state on re-connect (no missed events needed)
+- [x] Client re-subscribes and receives full current state on re-connect (no missed events needed)
 
 ### Tests
-- [ ] Test WebSocket connect → receives initial state
-- [ ] Test visit recorded via REST → WebSocket clients receive broadcast
-- [ ] Test disconnect handling (no crash on stale connection)
+- [x] Test WebSocket connect → receives initial state
+- [x] Test visit recorded via REST → WebSocket clients receive broadcast
+- [x] Test disconnect handling (no crash on stale connection)
 
 ---
 
