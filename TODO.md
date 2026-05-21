@@ -169,21 +169,21 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 
 ---
 
-## Task 15 — Frontend: Bull Throw Screen
+## Task 15 — Frontend: Bull Throw Screen ✅
 
-**Branch:** `feature/frontend-bull-throw`
+**Branch:** `feature/frontend-bull-throw` → merged into `development`
 
 ### Screen (`/bull-throw/:matchId`)
-- [ ] Fetch match state (player names, photos)
-- [ ] Display both players/teams side by side
-- [ ] Touch-friendly distance input per player (numeric, in mm or arbitrary units)
-- [ ] Submit → `POST /matches/{id}/bull-throw` → receive `starting_player_id`
-- [ ] Tie handling: show "Tie — re-throw" prompt, reset inputs
-- [ ] Display result: "Player X throws first"
-- [ ] "Continue" button → navigate to Walk-on (KO/Lightning) or Score Entry (Vorrunde)
+- [x] Fetch match state (player names, photos)
+- [x] Display both players/teams side by side
+- [x] Touch-friendly click-to-select UI (singles: click winner; doubles: click best, then best opponent)
+- [x] Submit → `POST /matches/{id}/bull-throw` → receive `starting_player_id`
+- [x] Tie handling: "Unentschieden" button shows re-throw prompt, resets selection
+- [x] Display result: "Player X wirft zuerst!"
+- [x] "Weiter" button → calls `POST /matches/{id}/start` → navigate to Score Entry
 
 ### Tests
-- [ ] Renders both players, submits distances, shows result, handles tie
+- [x] Renders both players, click to select shows result, tie handling, navigation
 
 ---
 
