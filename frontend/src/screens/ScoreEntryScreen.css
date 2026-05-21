@@ -1,0 +1,465 @@
+/* ============================================================
+   Score Entry Screen
+   ============================================================ */
+
+.score-screen {
+  min-height: 100vh;
+  background: #0d0d1a;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---- Loading / error ---- */
+
+.score-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.5rem;
+  color: #aaa;
+  background: #0d0d1a;
+}
+
+.score-error-page {
+  color: #ff6b6b;
+}
+
+/* ---- Header ---- */
+
+.score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a4a;
+  flex-shrink: 0;
+}
+
+.score-round-label {
+  font-size: 0.95rem;
+  color: #9b9bc8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.score-single-out-badge {
+  background: #ff9800;
+  color: #000;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---- Single-out banner ---- */
+
+.score-single-out-banner {
+  background: #ff9800;
+  color: #000;
+  text-align: center;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+/* ---- Score panels ---- */
+
+.score-panels {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.score-panels--doubles .score-team {
+  gap: 0.5rem;
+}
+
+.score-team {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 0;
+  gap: 0;
+}
+
+.score-vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #555;
+  padding: 0 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ---- Player panel ---- */
+
+.score-player-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  padding: 1rem 0.5rem;
+  background: #1a1a2e;
+  border: 2px solid transparent;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+  cursor: default;
+}
+
+.score-player-panel--active {
+  border-color: #4fc3f7;
+  background: #1e2a3a;
+}
+
+.score-player-panel--bust {
+  border-color: #ff5252;
+  background: #2a1a1a;
+  animation: bust-flash 0.4s ease-in-out 3;
+}
+
+@keyframes bust-flash {
+  0%,
+  100% {
+    background: #2a1a1a;
+  }
+  50% {
+    background: #5a1a1a;
+  }
+}
+
+.score-player-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  background: #2a2a4a;
+}
+
+.score-player-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.score-player-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #2a2a4a, #3a3a6a);
+  border-radius: 50%;
+}
+
+.score-player-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e0e0ff;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.score-remaining {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-player-panel--active .score-remaining {
+  color: #4fc3f7;
+}
+
+.score-player-panel--bust .score-remaining {
+  color: #ff5252;
+}
+
+.score-visit-count {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* ---- Doubles wrapper (clickable) ---- */
+
+.score-doubles-player-wrapper {
+  flex: 1 1 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.score-doubles-player-wrapper:focus-visible .score-player-panel {
+  border-color: #4fc3f7;
+}
+
+/* ---- Doubles hint ---- */
+
+.score-doubles-hint {
+  text-align: center;
+  color: #9b9bc8;
+  font-size: 0.95rem;
+  padding: 0.4rem 1rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* ---- Active indicator (singles) ---- */
+
+.score-active-indicator {
+  text-align: center;
+  color: #9b9bc8;
+  font-size: 0.95rem;
+  padding: 0.35rem 1rem;
+  flex-shrink: 0;
+}
+
+.score-active-indicator strong {
+  color: #4fc3f7;
+}
+
+/* ---- Checkout suggestion ---- */
+
+.score-checkout {
+  text-align: center;
+  background: #1a2a1a;
+  border: 1px solid #2a4a2a;
+  color: #a5d6a7;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.score-checkout-label {
+  font-weight: 700;
+  margin-right: 0.5rem;
+  color: #66bb6a;
+}
+
+.score-checkout-finish {
+  color: #ff8a65;
+  font-weight: 700;
+}
+
+/* ---- Inline error ---- */
+
+.score-inline-error {
+  text-align: center;
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  padding: 0.25rem 1rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* ---- Numpad ---- */
+
+.score-numpad {
+  background: #111120;
+  border-top: 1px solid #2a2a4a;
+  padding: 0.75rem;
+  flex-shrink: 0;
+}
+
+.score-input-display {
+  text-align: center;
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #fff;
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.score-input-placeholder {
+  color: #444;
+  font-weight: 400;
+}
+
+.score-numpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.score-numpad-btn {
+  height: 3.5rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.1s,
+    transform 0.05s;
+  user-select: none;
+}
+
+.score-numpad-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.score-numpad-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.score-numpad-btn--digit {
+  background: #2a2a4a;
+  color: #e0e0ff;
+}
+
+.score-numpad-btn--digit:hover:not(:disabled) {
+  background: #3a3a6a;
+}
+
+.score-numpad-btn--del {
+  background: #3a2a1a;
+  color: #ff9800;
+  font-size: 1.2rem;
+}
+
+.score-numpad-btn--del:hover:not(:disabled) {
+  background: #5a3a1a;
+}
+
+.score-numpad-btn--confirm {
+  background: #1a4a2a;
+  color: #66bb6a;
+  font-size: 1.8rem;
+}
+
+.score-numpad-btn--confirm:hover:not(:disabled) {
+  background: #1a6a2a;
+}
+
+/* ---- General button ---- */
+
+.score-btn {
+  padding: 0.9rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.score-btn--primary {
+  background: #4fc3f7;
+  color: #000;
+}
+
+.score-btn--primary:hover {
+  background: #81d4fa;
+}
+
+/* ---- Overlays ---- */
+
+.score-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.score-overlay--bust {
+  background: rgba(255, 30, 30, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.score-overlay--finished {
+  background: rgba(0, 0, 30, 0.88);
+  backdrop-filter: blur(6px);
+}
+
+.score-overlay-content {
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  border-radius: 16px;
+  padding: 2.5rem 3rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 480px;
+  width: 90%;
+}
+
+.score-overlay--bust .score-overlay-content {
+  border-color: #ff5252;
+}
+
+.score-overlay-title {
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.score-overlay--bust .score-overlay-title {
+  color: #ff5252;
+}
+
+.score-overlay--finished .score-overlay-title {
+  color: #4fc3f7;
+}
+
+.score-overlay-sub {
+  font-size: 1rem;
+  color: #aaa;
+}
+
+.score-overlay-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.score-overlay-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #4fc3f7;
+}
+
+.score-overlay-winner-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.score-overlay-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #9b9bc8;
+  font-size: 0.95rem;
+}

@@ -8,6 +8,9 @@ import type {
   BullThrowResponse,
   KOBracketResponse,
   LightningResponse,
+  VisitRequest,
+  VisitResponse,
+  MatchStateResponse,
 } from './types'
 
 export const API_BASE: string =
@@ -85,3 +88,9 @@ export const getKOBracket = (tournamentId: number): Promise<KOBracketResponse> =
 
 export const getLightning = (tournamentId: number): Promise<LightningResponse> =>
   apiGet<LightningResponse>(`/tournaments/${tournamentId}/lightning`)
+
+export const getMatchState = (matchId: number): Promise<MatchStateResponse> =>
+  apiGet<MatchStateResponse>(`/matches/${matchId}/state`)
+
+export const recordVisit = (matchId: number, body: VisitRequest): Promise<VisitResponse> =>
+  apiPost<VisitResponse, VisitRequest>(`/matches/${matchId}/visits`, body)
