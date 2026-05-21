@@ -280,39 +280,39 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 
 ---
 
-## Task 20 — Frontend: Tournament Overview Screens
+## Task 20 — Frontend: Tournament Overview Screens ✅
 
-**Branch:** `feature/frontend-overview`
+**Branch:** `feature/frontend-overview` → merged into `development`
 
 ### Vorrunde Standings (`/standings`)
-- [ ] Connect to `WS /ws/tournament/{id}` for live updates
-- [ ] Standings table: rank, name, regular points, bonus points, average
-- [ ] Sorted: reg_points desc, bonus_points as tiebreaker
-- [ ] Highlight top 6 (KO direct) and positions 7–8 (bonus-point wildcard candidates)
-- [ ] Auto-update on `standings_update` WebSocket event
+- [x] Connect to `WS /ws/tournament/{id}` for live updates
+- [x] Standings table: rank, name, regular points, bonus points, average
+- [x] Sorted: reg_points desc, bonus_points as tiebreaker
+- [x] Highlight top 6 (KO direct) and positions 7–8 (bonus-point wildcard candidates)
+- [x] Auto-update on `standings_update` WebSocket event
 
 ### KO Bracket (`/bracket`)
-- [ ] Visual bracket: QF → SF → Final + 3rd-place match
-- [ ] Each slot: player name, result (if played), TBD (if not yet)
-- [ ] Auto-update on `bracket_update` WebSocket event
+- [x] Visual bracket: QF → SF → Final + 3rd-place match
+- [x] Each slot: player name, result (if played), TBD (if not yet)
+- [x] Auto-update on `bracket_update` WebSocket event
 
 ### Lightning Round (`/lightning`)
-- [ ] List of lightning matches per KO round
-- [ ] Each entry: player names, status (pending/in progress/done), winner
+- [x] List of lightning matches per KO round
+- [x] Each entry: player names, status (pending/in progress/done), winner
 
 ### Next Matches Panel (shared component)
-- [ ] Shows upcoming unplayed matches in order
-- [ ] Used on standings and bracket screens as a sidebar/section
-- [ ] Updates live via WebSocket
+- [x] Shows upcoming unplayed matches in order
+- [x] Used on standings and bracket screens as a sidebar/section
+- [x] Updates live via WebSocket
 
 ### Navigation
-- [ ] Persistent nav bar or tab strip (Standings | KO Bracket | Lightning)
-- [ ] Accessible from score entry screen (referee can check standings between matches)
+- [x] Persistent nav bar or tab strip (Standings | KO Bracket | Lightning)
+- [x] Accessible from score entry screen (referee can check standings between matches)
 
 ### Tests
-- [ ] Standings table: sorted correctly, highlights correct rows
-- [ ] Bracket: renders all 8 slots, shows result when match played
-- [ ] WebSocket update: standings re-render on new data
+- [x] Standings table: sorted correctly, highlights correct rows
+- [x] Bracket: renders all 8 slots, shows result when match played
+- [x] WebSocket update: standings re-render on new data
 
 ---
 
