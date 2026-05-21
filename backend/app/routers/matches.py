@@ -23,6 +23,7 @@ from app.schemas.match import (
     BullThrowResponse,
     CheckoutSuggestionResponse,
     FinishMatchRequest,
+    MatchRead,
     MatchStateResponse,
     SpecialEventItem,
     VisitRequest,
@@ -107,6 +108,19 @@ def _current_player_id(match, visit_counts: dict[int, int]) -> int | None:
         return p1 if c1 == c2 else p2
     # starting_player is p2: p2 goes when counts are equal
     return p2 if c1 == c2 else p1
+
+
+# ---------------------------------------------------------------------------
+# GET /matches/{id}
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{match_id}", response_model=MatchRead)
+async def get_match(
+    match_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> MatchRead:
+    return await _get_match_or_404(db, match_id)
 
 
 # ---------------------------------------------------------------------------

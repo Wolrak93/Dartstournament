@@ -4,6 +4,8 @@ import type {
   TournamentCreateRequest,
   StandingEntry,
   MatchRead,
+  BullThrowRequest,
+  BullThrowResponse,
   KOBracketResponse,
   LightningResponse,
 } from './types'
@@ -50,6 +52,9 @@ async function apiPost<T, B = unknown>(path: string, body?: B): Promise<T> {
 
 export const getPlayers = (): Promise<Player[]> => apiGet<Player[]>('/players')
 
+export const getMatch = (matchId: number): Promise<MatchRead> =>
+  apiGet<MatchRead>(`/matches/${matchId}`)
+
 // ---------------------------------------------------------------------------
 // Tournament endpoints
 // ---------------------------------------------------------------------------
@@ -59,6 +64,15 @@ export const createTournament = (body: TournamentCreateRequest): Promise<Tournam
 
 export const startTournament = (tournamentId: number): Promise<unknown> =>
   apiPost<unknown>(`/tournaments/${tournamentId}/start`)
+
+export const recordBullThrow = (
+  matchId: number,
+  body: BullThrowRequest,
+): Promise<BullThrowResponse> =>
+  apiPost<BullThrowResponse, BullThrowRequest>(`/matches/${matchId}/bull-throw`, body)
+
+export const startMatch = (matchId: number): Promise<unknown> =>
+  apiPost<unknown>(`/matches/${matchId}/start`)
 
 export const getStandings = (tournamentId: number): Promise<StandingEntry[]> =>
   apiGet<StandingEntry[]>(`/tournaments/${tournamentId}/standings`)
