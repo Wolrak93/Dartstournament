@@ -1,6 +1,9 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { TournamentProvider } from './contexts/TournamentContext'
 import SetupScreen from './screens/SetupScreen'
+import StandingsScreen from './screens/StandingsScreen'
+import BracketScreen from './screens/BracketScreen'
+import LightningScreen from './screens/LightningScreen'
 
 const router = createBrowserRouter([
   { path: '/', element: <SetupScreen /> },
@@ -8,9 +11,9 @@ const router = createBrowserRouter([
   { path: '/bull-throw/:matchId', element: <div>Bull Throw (Task 15)</div> },
   { path: '/score/:matchId', element: <div>Score Entry (Task 16)</div> },
   { path: '/walkon/:matchId', element: <div>Walk-on (Task 19)</div> },
-  { path: '/standings', element: <div>Standings (Task 20)</div> },
-  { path: '/bracket', element: <div>KO Bracket (Task 20)</div> },
-  { path: '/lightning', element: <div>Lightning Round (Task 20)</div> },
+  { path: '/standings', element: <StandingsScreen /> },
+  { path: '/bracket', element: <BracketScreen /> },
+  { path: '/lightning', element: <LightningScreen /> },
 ])
 
 export default function App() {
