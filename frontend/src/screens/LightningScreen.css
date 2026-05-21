@@ -1,0 +1,68 @@
+.lightning-round {
+  margin-bottom: 2rem;
+}
+
+.lightning-round-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin: 0 0 0.75rem;
+}
+
+.lightning-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lightning-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: #1e2d4a;
+  border-radius: 8px;
+  border: 1px solid #374151;
+}
+
+.lightning-players {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.lightning-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.lightning-status--pending {
+  background: #374151;
+  color: #9ca3af;
+}
+
+.lightning-status--bull_throw,
+.lightning-status--in_progress {
+  background: #1e3a5f;
+  color: #60a5fa;
+}
+
+.lightning-status--finished {
+  background: #064e3b;
+  color: #34d399;
+}
+
+.lightning-winner {
+  font-size: 0.875rem;
+  color: #34d399;
+  font-weight: 600;
+}

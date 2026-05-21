@@ -1,4 +1,12 @@
-import type { Player, Tournament, TournamentCreateRequest } from './types'
+import type {
+  Player,
+  Tournament,
+  TournamentCreateRequest,
+  StandingEntry,
+  MatchRead,
+  KOBracketResponse,
+  LightningResponse,
+} from './types'
 
 export const API_BASE: string =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000'
@@ -51,3 +59,15 @@ export const createTournament = (body: TournamentCreateRequest): Promise<Tournam
 
 export const startTournament = (tournamentId: number): Promise<unknown> =>
   apiPost<unknown>(`/tournaments/${tournamentId}/start`)
+
+export const getStandings = (tournamentId: number): Promise<StandingEntry[]> =>
+  apiGet<StandingEntry[]>(`/tournaments/${tournamentId}/standings`)
+
+export const getNextMatches = (tournamentId: number): Promise<MatchRead[]> =>
+  apiGet<MatchRead[]>(`/tournaments/${tournamentId}/matches/next`)
+
+export const getKOBracket = (tournamentId: number): Promise<KOBracketResponse> =>
+  apiGet<KOBracketResponse>(`/tournaments/${tournamentId}/ko/bracket`)
+
+export const getLightning = (tournamentId: number): Promise<LightningResponse> =>
+  apiGet<LightningResponse>(`/tournaments/${tournamentId}/lightning`)

@@ -1,0 +1,77 @@
+.standings-section {
+  flex: 1;
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+.standings-table thead tr {
+  background: #1e2d4a;
+}
+
+.standings-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  border-bottom: 2px solid #374151;
+}
+
+.standings-row td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #1f2937;
+  color: #d1d5db;
+}
+
+.standings-row--ko td {
+  background: rgba(16, 185, 129, 0.08);
+  color: #e5e7eb;
+}
+
+.standings-row--ko .standings-rank {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.standings-row--wildcard td {
+  background: rgba(245, 158, 11, 0.08);
+  color: #e5e7eb;
+}
+
+.standings-row--wildcard .standings-rank {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.standings-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.standings-rank {
+  font-size: 1.1rem;
+  font-weight: 700;
+  width: 2.5rem;
+  text-align: center;
+}
+
+.standings-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.legend-ko {
+  color: #34d399;
+}
+
+.legend-wildcard {
+  color: #fbbf24;
+}
