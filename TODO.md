@@ -67,42 +67,42 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 
 ---
 
-## Task 12 — Backend: FastAPI REST Endpoints
+## Task 12 — Backend: FastAPI REST Endpoints ✅
 
-**Branch:** `feature/api-endpoints`
+**Branch:** `feature/api-endpoints` → merged into `development`
 
 ### Player Endpoints (`backend/app/routers/players.py`)
-- [ ] `GET /players` — list all players
-- [ ] `POST /players` — create player (name, photo_path, music_path, championship_count)
-- [ ] `GET /players/{id}` — get player
+- [x] `GET /players` — list all players
+- [x] `POST /players` — create player (name, photo_path, music_path, championship_count)
+- [x] `GET /players/{id}` — get player
 
 ### Tournament Endpoints (`backend/app/routers/tournaments.py`)
-- [ ] `POST /tournaments` — create tournament (player_ids, mode: swiss/fixed)
-- [ ] `GET /tournaments/{id}` — tournament with status, players, current round
-- [ ] `POST /tournaments/{id}/start` — generate Vorrunde schedule
-- [ ] `GET /tournaments/{id}/standings` — sorted standings (reg points + bonus)
-- [ ] `GET /tournaments/{id}/matches` — list all matches with status
-- [ ] `GET /tournaments/{id}/matches/next` — next unplayed match(es)
-- [ ] `POST /tournaments/{id}/ko/start` — run KO qualification, generate bracket
-- [ ] `GET /tournaments/{id}/ko/bracket` — full bracket with results
-- [ ] `GET /tournaments/{id}/lightning` — lightning round schedule and results
+- [x] `POST /tournaments` — create tournament (player_ids, mode: swiss/fixed)
+- [x] `GET /tournaments/{id}` — tournament with status, players, current round
+- [x] `POST /tournaments/{id}/start` — generate Vorrunde schedule
+- [x] `GET /tournaments/{id}/standings` — sorted standings (reg points + bonus)
+- [x] `GET /tournaments/{id}/matches` — list all matches with status
+- [x] `GET /tournaments/{id}/matches/next` — next unplayed match(es)
+- [x] `POST /tournaments/{id}/ko/start` — run KO qualification, generate bracket
+- [x] `GET /tournaments/{id}/ko/bracket` — full bracket with results
+- [x] `GET /tournaments/{id}/lightning` — lightning round schedule and results
 
 ### Match Endpoints (`backend/app/routers/matches.py`)
-- [ ] `POST /matches/{id}/bull-throw` — record distances, returns starting player
-- [ ] `POST /matches/{id}/start` — set match status to in_progress
-- [ ] `POST /matches/{id}/visits` — record visit: `{dart1, dart2, dart3, bounce_flags, robin_hood_flags}`
-- [ ] `GET /matches/{id}/state` — full match state: remaining per player, visit count, checkout suggestion, current player, mode
-- [ ] `POST /matches/{id}/finish` — force-finish (referee override)
+- [x] `POST /matches/{id}/bull-throw` — record distances, returns starting player
+- [x] `POST /matches/{id}/start` — set match status to in_progress
+- [x] `POST /matches/{id}/visits` — record visit: `{dart1, dart2, dart3, bounce_flags, robin_hood_flags}`
+- [x] `GET /matches/{id}/state` — full match state: remaining per player, visit count, checkout suggestion, current player, mode
+- [x] `POST /matches/{id}/finish` — force-finish (referee override)
 
 ### Error Handling & Structure
-- [ ] Consistent error response schema: `{detail: str, code: str}`
-- [ ] 404 for missing resources, 409 for invalid state transitions, 422 for bad input
-- [ ] Include `backend/app/routers/__init__.py` and wire all routers into `main.py`
+- [x] Consistent error response schema: `{detail: str, code: str}`
+- [x] 404 for missing resources, 409 for invalid state transitions, 422 for bad input
+- [x] Include `backend/app/routers/__init__.py` and wire all routers into `main.py`
 
 ### Tests
-- [ ] API tests using FastAPI `TestClient` with in-memory DB fixture
-- [ ] Test each endpoint: happy path + main error cases
-- [ ] Test state machine: can't record visit before bull throw, can't start match twice
+- [x] API tests using FastAPI `TestClient` with in-memory DB fixture
+- [x] Test each endpoint: happy path + main error cases
+- [x] Test state machine: can't record visit before bull throw, can't start match twice
 
 ---
 
