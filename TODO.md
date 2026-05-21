@@ -143,29 +143,29 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 
 ---
 
-## Task 14 — Frontend: App Shell & Tournament Setup
+## Task 14 — Frontend: App Shell & Tournament Setup ✅
 
-**Branch:** `feature/frontend-setup`
+**Branch:** `feature/frontend-setup` → merged into `development`
 
 ### App Shell
-- [ ] React Router v6 setup with routes for all screens:
+- [x] React Router v6 setup with routes for all screens:
       `/setup`, `/bull-throw/:matchId`, `/score/:matchId`, `/walkon/:matchId`,
       `/standings`, `/bracket`, `/lightning`
-- [ ] Global tournament context (React Context API): tournament_id, current match, standings
-- [ ] `useWebSocket(channel, matchId|tournamentId)` custom hook:
+- [x] Global tournament context (React Context API): tournament_id, current match, standings
+- [x] `useWebSocket(channel, matchId|tournamentId)` custom hook:
       connects, parses events, exposes state, handles reconnect
-- [ ] `apiClient` utility: typed `fetch` wrapper for all REST endpoints
+- [x] `apiClient` utility: typed `fetch` wrapper for all REST endpoints
 
 ### Tournament Setup Screen (`/setup`)
-- [ ] Fetch player list from `GET /players`
-- [ ] Touch-friendly player selection (checkbox list with photos)
-- [ ] Player count validation (9–13; show error otherwise)
-- [ ] Mode toggle: Swiss / Fixed draw
-- [ ] "Start Tournament" button → `POST /tournaments` + `POST /tournaments/{id}/start`
-- [ ] Navigate to standings/overview on success
+- [x] Fetch player list from `GET /players`
+- [x] Touch-friendly player selection (checkbox list with photos)
+- [x] Player count validation (9–13; show error otherwise)
+- [x] Mode toggle: Swiss / Fixed draw
+- [x] "Start Tournament" button → `POST /tournaments` + `POST /tournaments/{id}/start`
+- [x] Navigate to standings/overview on success
 
 ### Tests (Vitest + React Testing Library)
-- [ ] Setup screen: renders player list, validates count, calls API on submit
+- [x] Setup screen: renders player list, validates count, calls API on submit
 
 ---
 
