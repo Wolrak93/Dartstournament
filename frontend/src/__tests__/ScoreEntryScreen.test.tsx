@@ -62,6 +62,13 @@ function makeMatchState(overrides: Partial<MatchStateResponse> = {}): MatchState
     remaining_p2: 301,
     visit_count_p1: 0,
     visit_count_p2: 0,
+    visit_count_p3: null,
+    visit_count_p4: null,
+    avg_p1: 0,
+    avg_p2: 0,
+    avg_p3: null,
+    avg_p4: null,
+    last_visit_total: null,
     single_out_mode: false,
     checkout_suggestion: null,
     ...overrides,
@@ -100,7 +107,7 @@ function renderScoreEntry(matchId = '1') {
   )
 }
 
-/** Wait for the screen to finish loading (numpad becomes visible). */
+/** Wait for the screen to finish loading (DEL button becomes visible). */
 async function waitForLoaded() {
   await waitFor(() => screen.getByRole('button', { name: 'DEL' }))
 }
@@ -125,58 +132,72 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
     await waitForLoaded()
 
-    // Player names appear in player panels and/or active indicator
     expect(screen.queryAllByText('Lars').length).toBeGreaterThan(0)
     expect(screen.queryAllByText('Mike').length).toBeGreaterThan(0)
-    // Both start at 301 — each panel shows the remaining score
+    // Both teams start at 301
     expect(screen.getAllByText('301')).toHaveLength(2)
   })
 
-  // ---- numpad input ----------------------------------------------------------------
+  it('shows player averages (0.00) on initial load', async () => {
+    renderScoreEntry()
+    await waitForLoaded()
 
-  it('numpad digit input builds a three-digit number', async () => {
+    // Both players start with 0.00 average
+    const avgElements = screen.getAllByText('0.00')
+    expect(avgElements.length).toBeGreaterThanOrEqual(2)
+  })
+
+  // ---- dart field selector ----------------------------------------------------------------
+
+  it('clicking a single field assigns it to dart slot 1', async () => {
     const user = userEvent.setup()
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '1' }))
-    await user.click(screen.getByRole('button', { name: '4' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
 
-    expect(screen.getByText('140')).toBeInTheDocument()
+    // Slot 1 shows T20
+    expect(screen.getByLabelText('Dart 1: T20')).toBeInTheDocument()
   })
 
-  it('DEL removes the last digit', async () => {
+  it('clicking three fields enables CONFIRM', async () => {
     const user = userEvent.setup()
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '1' }))
-    await user.click(screen.getByRole('button', { name: '4' }))
-    // "14" is now showing — verify it was typed
-    expect(screen.getByText('14')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '✓' })).toBeDisabled()
 
-    await user.click(screen.getByRole('button', { name: 'DEL' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
+    await user.click(screen.getByRole('button', { name: 'T19' }))
+    await user.click(screen.getByRole('button', { name: 'D12' }))
 
-    // After DEL, the display should no longer show "14"
-    expect(screen.queryByText('14')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '✓' })).not.toBeDisabled()
   })
 
-  it('CONFIRM button is disabled when input is empty', async () => {
+  it('CONFIRM button is disabled when no dart is selected', async () => {
     renderScoreEntry()
     await waitForLoaded()
 
     expect(screen.getByRole('button', { name: '✓' })).toBeDisabled()
   })
 
-  it('CONFIRM submits visit with correct player_id and split darts', async () => {
+  it('CONFIRM enabled after selecting just one field', async () => {
     const user = userEvent.setup()
     renderScoreEntry()
     await waitForLoaded()
 
-    // Type "60"
-    await user.click(screen.getByRole('button', { name: '6' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
+
+    expect(screen.getByRole('button', { name: '✓' })).not.toBeDisabled()
+  })
+
+  it('CONFIRM submits visit with selected field values', async () => {
+    const user = userEvent.setup()
+    renderScoreEntry()
+    await waitForLoaded()
+
+    // Select T20 (60 pts) as dart 1, leave dart 2 and 3 empty
+    await user.click(screen.getByRole('button', { name: 'T20' }))
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => {
@@ -191,43 +212,100 @@ describe('ScoreEntryScreen', () => {
     })
   })
 
-  it('CONFIRM splits total > 60 across multiple darts', async () => {
+  it('CONFIRM sends multiple dart values when multiple fields selected', async () => {
     const user = userEvent.setup()
     renderScoreEntry()
     await waitForLoaded()
 
-    // "140" → should split as 60+60+20
-    await user.click(screen.getByRole('button', { name: '1' }))
-    await user.click(screen.getByRole('button', { name: '4' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    // T20=60, T19=57, D12=24
+    await user.click(screen.getByRole('button', { name: 'T20' }))
+    await user.click(screen.getByRole('button', { name: 'T19' }))
+    await user.click(screen.getByRole('button', { name: 'D12' }))
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => {
       expect(recordVisit).toHaveBeenCalledWith(1, {
         player_id: 10,
         dart1: 60,
-        dart2: 60,
-        dart3: 20,
+        dart2: 57,
+        dart3: 24,
         bounce_flags: [false, false, false],
         robin_hood_flags: [false, false, false],
       })
     })
   })
 
-  it('clears the input after a successful confirm', async () => {
+  it('B0 (bounce) button sends bounce_flags=true for that dart', async () => {
     const user = userEvent.setup()
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '6' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'B0' }))
+    await user.click(screen.getByRole('button', { name: '✓' }))
+
+    await waitFor(() => {
+      expect(recordVisit).toHaveBeenCalledWith(1, {
+        player_id: 10,
+        dart1: 0,
+        dart2: 0,
+        dart3: 0,
+        bounce_flags: [true, false, false],
+        robin_hood_flags: [false, false, false],
+      })
+    })
+  })
+
+  it('R0 (robin hood) button sends robin_hood_flags=true for that dart', async () => {
+    const user = userEvent.setup()
+    renderScoreEntry()
+    await waitForLoaded()
+
+    await user.click(screen.getByRole('button', { name: 'R0' }))
+    await user.click(screen.getByRole('button', { name: '✓' }))
+
+    await waitFor(() => {
+      expect(recordVisit).toHaveBeenCalledWith(1, {
+        player_id: 10,
+        dart1: 0,
+        dart2: 0,
+        dart3: 0,
+        bounce_flags: [false, false, false],
+        robin_hood_flags: [true, false, false],
+      })
+    })
+  })
+
+  it('DEL clears the current dart slot', async () => {
+    const user = userEvent.setup()
+    renderScoreEntry()
+    await waitForLoaded()
+
+    await user.click(screen.getByRole('button', { name: 'T20' }))
+    // Slot 1 now has T20; active slot moved to slot 2
+    // Click on slot 1 to re-select it
+    await user.click(screen.getByLabelText('Dart 1: T20'))
+    // Now DEL clears slot 1
+    await user.click(screen.getByRole('button', { name: 'DEL' }))
+
+    expect(screen.getByLabelText('Dart 1: leer')).toBeInTheDocument()
+  })
+
+  it('resets dart slots after a successful confirm', async () => {
+    const user = userEvent.setup()
+    renderScoreEntry()
+    await waitForLoaded()
+
+    await user.click(screen.getByRole('button', { name: 'T20' }))
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => {
       expect(recordVisit).toHaveBeenCalled()
     })
-    // The input display should no longer show '60'
-    expect(screen.queryByText('60')).not.toBeInTheDocument()
+
+    // After confirm, CONFIRM should be disabled again (no darts selected)
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '✓' })).toBeDisabled()
+    })
   })
 
   // ---- bust overlay ----------------------------------------------------------------
@@ -238,8 +316,7 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '6' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => {
@@ -263,10 +340,10 @@ describe('ScoreEntryScreen', () => {
 
     renderScoreEntry()
 
+    // The checkout suggestion joins darts with spaces: "T20 T18 Bull"
     await waitFor(() => {
-      expect(screen.getByText(/T20/)).toBeInTheDocument()
+      expect(screen.getByText('T20 T18 Bull')).toBeInTheDocument()
     })
-    expect(screen.getByText(/T18/)).toBeInTheDocument()
   })
 
   it('does not show checkout suggestion when remaining > 170', async () => {
@@ -280,7 +357,9 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
     await waitForLoaded()
 
-    expect(screen.queryByText(/Checkout/)).not.toBeInTheDocument()
+    // Checkout is only shown in the team block when activePlayerId matches
+    // and checkout_suggestion is non-null; here it's null so nothing to show
+    expect(screen.queryByText(/T20.*T18/)).not.toBeInTheDocument()
   })
 
   it('re-fetches match state on WebSocket score_update to update checkout suggestion', async () => {
@@ -362,8 +441,7 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '6' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => {
@@ -381,8 +459,7 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '6' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => screen.getByRole('dialog'))
@@ -411,7 +488,7 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
 
     await waitFor(() => {
-      expect(screen.getByText(/Bitte Spieler antippen/i)).toBeInTheDocument()
+      expect(screen.getByText(/Spieler antippen/i)).toBeInTheDocument()
     })
   })
 
@@ -429,52 +506,20 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '6' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
 
     expect(screen.getByRole('button', { name: '✓' })).toBeDisabled()
   })
 
-  // ---- active player indicator ----------------------------------------------------
+  // ---- active player indicator (singles) ------------------------------------------
 
-  it('shows active player indicator in singles mode', async () => {
+  it('shows active player indicator arrow in singles mode', async () => {
     renderScoreEntry()
+    await waitForLoaded()
 
-    await waitFor(() => {
-      expect(screen.getByText(/Am Zug:/i)).toBeInTheDocument()
-    })
-    // Lars name appears in the indicator
+    // The ">" arrow is shown before the active player's name
+    expect(screen.getByText('>')).toBeInTheDocument()
     expect(screen.queryAllByText('Lars').length).toBeGreaterThan(0)
-  })
-
-  // ---- input clamps ---------------------------------------------------------------
-
-  it('does not allow input above 180', async () => {
-    const user = userEvent.setup()
-    renderScoreEntry()
-    await waitForLoaded()
-
-    // Type "200" — last digit should be rejected because 200 > 180
-    await user.click(screen.getByRole('button', { name: '2' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
-
-    expect(screen.queryByText('200')).not.toBeInTheDocument()
-  })
-
-  it('caps input at 3 digits maximum', async () => {
-    const user = userEvent.setup()
-    renderScoreEntry()
-    await waitForLoaded()
-
-    await user.click(screen.getByRole('button', { name: '1' }))
-    await user.click(screen.getByRole('button', { name: '2' }))
-    await user.click(screen.getByRole('button', { name: '3' }))
-    // 4th digit should be rejected
-    await user.click(screen.getByRole('button', { name: '4' }))
-
-    expect(screen.queryByText('1234')).not.toBeInTheDocument()
-    expect(screen.getByText('123')).toBeInTheDocument()
   })
 
   // ---- error handling -------------------------------------------------------------
@@ -485,8 +530,7 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
     await waitForLoaded()
 
-    await user.click(screen.getByRole('button', { name: '6' }))
-    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: 'T20' }))
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => {
@@ -497,7 +541,6 @@ describe('ScoreEntryScreen', () => {
   // ---- loading state --------------------------------------------------------------
 
   it('shows loading indicator initially', () => {
-    // Delay resolution so the loading state is visible
     vi.mocked(getMatch).mockReturnValue(new Promise(() => undefined))
     renderScoreEntry()
 

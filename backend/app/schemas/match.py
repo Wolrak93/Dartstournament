@@ -139,6 +139,13 @@ class MatchStateResponse(BaseModel):
     remaining_p2: int
     visit_count_p1: int
     visit_count_p2: int
+    visit_count_p3: int | None  # doubles only
+    visit_count_p4: int | None  # doubles only
+    avg_p1: float               # 3-dart average player 1
+    avg_p2: float               # 3-dart average player 2
+    avg_p3: float | None        # doubles only
+    avg_p4: float | None        # doubles only
+    last_visit_total: int | None  # score of the most recent visit
     single_out_mode: bool
     checkout_suggestion: CheckoutSuggestionResponse | None
 

@@ -83,6 +83,13 @@ def _compute_remaining(visits, starting_score: int) -> int:
     return starting_score - scored
 
 
+def _player_avg(visits: list) -> float:
+    """3-dart average: total scored across all visits / number of visits."""
+    if not visits:
+        return 0.0
+    return sum(v.total for v in visits) / len(visits)
+
+
 def _current_player_id(match, visit_counts: dict[int, int]) -> int | None:
     """Determine whose turn it is in a singles match.
 
@@ -470,6 +477,23 @@ async def get_match_state(
     count_p1 = visit_counts.get(match.player1_id, 0)
     count_p2 = visit_counts.get(match.player2_id, 0)
 
+    # Per-player averages and doubles-only counts
+    avg_p1 = _player_avg(visits_p1)
+    avg_p2 = _player_avg(visits_p2)
+    if match.player3_id is not None:
+        count_p3: int | None = visit_counts.get(match.player3_id, 0)
+        count_p4: int | None = visit_counts.get(match.player4_id, 0) if match.player4_id else 0
+        avg_p3: float | None = _player_avg(visits_p3)
+        avg_p4: float | None = _player_avg(visits_p4)
+    else:
+        count_p3 = None
+        count_p4 = None
+        avg_p3 = None
+        avg_p4 = None
+
+    # Most recent visit score (for display purposes)
+    last_visit_total: int | None = all_visits[-1].total if all_visits else None
+
     current_player_id = _current_player_id(match, visit_counts)
 
     # Determine single_out_mode for current player
@@ -520,6 +544,13 @@ async def get_match_state(
         remaining_p2=remaining_p2,
         visit_count_p1=count_p1,
         visit_count_p2=count_p2,
+        visit_count_p3=count_p3,
+        visit_count_p4=count_p4,
+        avg_p1=avg_p1,
+        avg_p2=avg_p2,
+        avg_p3=avg_p3,
+        avg_p4=avg_p4,
+        last_visit_total=last_visit_total,
         single_out_mode=single_out_mode,
         checkout_suggestion=checkout,
     )

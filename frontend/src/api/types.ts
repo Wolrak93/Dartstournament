@@ -168,6 +168,13 @@ export interface MatchStateResponse {
   remaining_p2: number
   visit_count_p1: number
   visit_count_p2: number
+  visit_count_p3: number | null
+  visit_count_p4: number | null
+  avg_p1: number
+  avg_p2: number
+  avg_p3: number | null
+  avg_p4: number | null
+  last_visit_total: number | null
   single_out_mode: boolean
   checkout_suggestion: CheckoutSuggestion | null
 }

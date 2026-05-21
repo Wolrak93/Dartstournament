@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getMatch, getMatchState, getPlayers, playerPhotoUrl, recordVisit } from '../api/client'
+import { getMatch, getMatchState, getPlayers, recordVisit } from '../api/client'
 import type { MatchRead, MatchStateResponse, Player, RoundType, VisitResponse } from '../api/types'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { splitTotal } from '../utils/dartUtils'
 import './ScoreEntryScreen.css'
 
 // ---------------------------------------------------------------------------
@@ -13,7 +12,7 @@ import './ScoreEntryScreen.css'
 const SINGLE_OUT_VISIT: Record<string, number> = {
   vorrunde: 15,
   ko: 25,
-  lightning: 1, // always single-out from visit 1
+  lightning: 1,
 }
 
 function roundLabel(roundType: RoundType, roundNumber: number): string {
@@ -29,94 +28,200 @@ function roundLabel(roundType: RoundType, roundNumber: number): string {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-interface PlayerPanelProps {
-  player: Player | undefined
-  remaining: number
-  visitCount: number
-  isActive: boolean
-  isBust: boolean
-}
-
-function PlayerPanel({ player, remaining, visitCount, isActive, isBust }: PlayerPanelProps) {
-  return (
-    <div
-      className={`score-player-panel${isActive ? ' score-player-panel--active' : ''}${isBust ? ' score-player-panel--bust' : ''}`}
-      aria-current={isActive ? 'true' : undefined}
-    >
-      <div className="score-player-photo">
-        {player?.photo_path ? (
-          <img src={playerPhotoUrl(player.photo_path)} alt={player?.name ?? ''} />
-        ) : (
-          <div className="score-player-photo-placeholder" />
-        )}
-      </div>
-      <div className="score-player-name">{player?.name ?? '—'}</div>
-      <div className="score-remaining" aria-label={`Verbleibend: ${String(remaining)}`}>
-        {String(remaining)}
-      </div>
-      <div className="score-visit-count">Besuche: {String(visitCount)}</div>
-    </div>
-  )
+function formatAvg(avg: number): string {
+  return avg.toFixed(2)
 }
 
 // ---------------------------------------------------------------------------
-// Numpad
+// Dart field definitions
 // ---------------------------------------------------------------------------
 
-interface NumpadProps {
-  value: string
-  onDigit: (d: string) => void
-  onDelete: () => void
-  onConfirm: () => void
+interface DartField {
+  label: string
+  value: number
+  isBounce: boolean
+  isRobinHood: boolean
+}
+
+const SINGLE_ROW: DartField[] = [
+  { label: '0', value: 0, isBounce: false, isRobinHood: false },
+  ...Array.from({ length: 20 }, (_, i) => ({
+    label: String(i + 1),
+    value: i + 1,
+    isBounce: false,
+    isRobinHood: false,
+  })),
+  { label: 'B', value: 25, isBounce: false, isRobinHood: false },
+]
+
+const DOUBLE_ROW: DartField[] = [
+  { label: 'B0', value: 0, isBounce: true, isRobinHood: false },
+  ...Array.from({ length: 20 }, (_, i) => ({
+    label: `D${i + 1}`,
+    value: (i + 1) * 2,
+    isBounce: false,
+    isRobinHood: false,
+  })),
+  { label: 'BE', value: 50, isBounce: false, isRobinHood: false },
+]
+
+const TRIPLE_ROW: DartField[] = [
+  { label: 'R0', value: 0, isBounce: false, isRobinHood: true },
+  ...Array.from({ length: 20 }, (_, i) => ({
+    label: `T${i + 1}`,
+    value: (i + 1) * 3,
+    isBounce: false,
+    isRobinHood: false,
+  })),
+]
+
+// ---------------------------------------------------------------------------
+// DartFieldSelector component
+// ---------------------------------------------------------------------------
+
+interface SelectedDart {
+  field: DartField
+}
+
+interface DartFieldSelectorProps {
+  onConfirm: (dart1: number, dart2: number, dart3: number, bounceFlags: boolean[], robinHoodFlags: boolean[]) => void
   disabled: boolean
 }
 
-function Numpad({ value, onDigit, onDelete, onConfirm, disabled }: NumpadProps) {
+function DartFieldSelector({ onConfirm, disabled }: DartFieldSelectorProps) {
+  const [darts, setDarts] = useState<(SelectedDart | null)[]>([null, null, null])
+  const [activeSlot, setActiveSlot] = useState(0)
+
+  function selectField(field: DartField) {
+    if (disabled) return
+    setDarts((prev) => {
+      const next = [...prev]
+      next[activeSlot] = { field }
+      return next
+    })
+    setActiveSlot((prev) => (prev < 2 ? prev + 1 : prev))
+  }
+
+  function handleSlotClick(idx: number) {
+    if (disabled) return
+    setActiveSlot(idx)
+  }
+
+  function handleDel() {
+    if (disabled) return
+    // Clear active slot; if it's empty, go back one and clear that
+    setDarts((prev) => {
+      const next = [...prev]
+      if (next[activeSlot] !== null) {
+        next[activeSlot] = null
+        return next
+      }
+      if (activeSlot > 0) {
+        next[activeSlot - 1] = null
+        return next
+      }
+      return next
+    })
+    setActiveSlot((prev) => {
+      if (darts[prev] !== null) return prev
+      return prev > 0 ? prev - 1 : 0
+    })
+  }
+
+  function handleConfirm() {
+    const d1 = darts[0]?.field.value ?? 0
+    const d2 = darts[1]?.field.value ?? 0
+    const d3 = darts[2]?.field.value ?? 0
+    const bounce = darts.map((d) => d?.field.isBounce ?? false)
+    const robinHood = darts.map((d) => d?.field.isRobinHood ?? false)
+    onConfirm(d1, d2, d3, bounce, robinHood)
+    // Reset after confirm
+    setDarts([null, null, null])
+    setActiveSlot(0)
+  }
+
+  const hasAnyDart = darts.some((d) => d !== null)
+
   return (
-    <div className="score-numpad" aria-label="Numpad">
-      <div className="score-input-display" aria-live="polite">
-        {value === '' ? <span className="score-input-placeholder">—</span> : value}
-      </div>
-      <div className="score-numpad-grid">
-        {['7', '8', '9', '4', '5', '6', '1', '2', '3'].map((d) => (
+    <div className="dart-selector" aria-label="Dart-Feld-Auswahl">
+      {/* Dart slots */}
+      <div className="dart-slots">
+        {darts.map((d, i) => (
           <button
-            key={d}
-            className="score-numpad-btn score-numpad-btn--digit"
-            onClick={() => onDigit(d)}
-            disabled={disabled}
+            key={i}
             type="button"
+            className={`dart-slot${i === activeSlot ? ' dart-slot--active' : ''}${d !== null ? ' dart-slot--filled' : ''}`}
+            onClick={() => handleSlotClick(i)}
+            disabled={disabled}
+            aria-label={`Dart ${i + 1}: ${d?.field.label ?? 'leer'}`}
           >
-            {d}
+            <span className="dart-slot-number">Dart {i + 1}</span>
+            <span className="dart-slot-value">{d?.field.label ?? '—'}</span>
+            {d !== null && <span className="dart-slot-pts">{d.field.value} pts</span>}
           </button>
         ))}
-        <button
-          className="score-numpad-btn score-numpad-btn--del"
-          onClick={onDelete}
-          disabled={disabled}
-          type="button"
-        >
-          DEL
-        </button>
-        <button
-          className="score-numpad-btn score-numpad-btn--digit"
-          onClick={() => onDigit('0')}
-          disabled={disabled}
-          type="button"
-        >
-          0
-        </button>
-        <button
-          className="score-numpad-btn score-numpad-btn--confirm"
-          onClick={onConfirm}
-          disabled={disabled || value === ''}
-          type="button"
-        >
-          ✓
-        </button>
+        <div className="dart-slots-actions">
+          <button
+            type="button"
+            className="dart-btn dart-btn--del"
+            onClick={handleDel}
+            disabled={disabled || !hasAnyDart}
+            aria-label="DEL"
+          >
+            DEL
+          </button>
+          <button
+            type="button"
+            className="dart-btn dart-btn--confirm"
+            onClick={handleConfirm}
+            disabled={disabled || !hasAnyDart}
+          >
+            ✓
+          </button>
+        </div>
+      </div>
+
+      {/* Field grid */}
+      <div className="dart-field-grid">
+        <div className="dart-field-row dart-field-row--singles">
+          {SINGLE_ROW.map((f) => (
+            <button
+              key={f.label}
+              type="button"
+              className="dart-field-btn"
+              onClick={() => selectField(f)}
+              disabled={disabled}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="dart-field-row dart-field-row--doubles">
+          {DOUBLE_ROW.map((f) => (
+            <button
+              key={f.label}
+              type="button"
+              className="dart-field-btn dart-field-btn--double"
+              onClick={() => selectField(f)}
+              disabled={disabled}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="dart-field-row dart-field-row--triples">
+          {TRIPLE_ROW.map((f) => (
+            <button
+              key={f.label}
+              type="button"
+              className="dart-field-btn dart-field-btn--triple"
+              onClick={() => selectField(f)}
+              disabled={disabled}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -141,8 +246,7 @@ export default function ScoreEntryScreen() {
   // ---- doubles: manually chosen active player ----
   const [doublesActivePlayer, setDoublesActivePlayer] = useState<number | null>(null)
 
-  // ---- numpad ----
-  const [inputValue, setInputValue] = useState('')
+  // ---- submission state ----
   const [submitting, setSubmitting] = useState(false)
 
   // ---- overlays ----
@@ -184,7 +288,7 @@ export default function ScoreEntryScreen() {
   }, [loadState])
 
   // ---------------------------------------------------------------------------
-  // Refresh match state (used after visits and WebSocket events)
+  // Refresh match state
   // ---------------------------------------------------------------------------
 
   const refreshMatchState = useCallback(() => {
@@ -206,8 +310,7 @@ export default function ScoreEntryScreen() {
         winner_id: number | null
       }
       if (data.match_finished) {
-        // Wrap in .then() to avoid direct setState in effect body
-        Promise.resolve({ finished: true, wid: data.winner_id })
+        Promise.resolve({ wid: data.winner_id })
           .then(({ wid }) => {
             setMatchFinished(true)
             setWinnerId(wid)
@@ -229,9 +332,12 @@ export default function ScoreEntryScreen() {
   }, [lastEvent, refreshMatchState])
 
   // Cleanup bust timer on unmount
-  useEffect(() => () => {
-    if (bustTimerRef.current) clearTimeout(bustTimerRef.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (bustTimerRef.current) clearTimeout(bustTimerRef.current)
+    },
+    [],
+  )
 
   // ---------------------------------------------------------------------------
   // Derived values
@@ -246,16 +352,9 @@ export default function ScoreEntryScreen() {
     ? [match.player2_id, match.player4_id].filter((x): x is number => x != null)
     : []
 
-  // Active player for score entry
   const activePlayerId: number | null = isDoubles
     ? doublesActivePlayer
     : (matchState?.current_player_id ?? null)
-
-  // Remaining for current active player's team
-  function remainingForPlayer(playerId: number | null): number {
-    if (!matchState || !match || playerId == null) return 0
-    return team1Ids.includes(playerId) ? matchState.remaining_p1 : matchState.remaining_p2
-  }
 
   // Single-Out threshold
   const roundType = match?.round_type ?? 'vorrunde'
@@ -268,40 +367,39 @@ export default function ScoreEntryScreen() {
   const showSingleOutBanner =
     !matchFinished && matchState != null && currentVisitCount >= singleOutThreshold
 
-  // ---------------------------------------------------------------------------
-  // Numpad handlers
-  // ---------------------------------------------------------------------------
-
-  function handleDigit(d: string) {
-    setInputValue((prev) => {
-      if (prev.length >= 3) return prev
-      const next = prev + d
-      if (parseInt(next, 10) > 180) return prev
-      return next
-    })
+  // Per-player average lookup
+  function playerAvg(playerId: number | null): number {
+    if (!matchState || playerId == null) return 0
+    if (playerId === match?.player1_id) return matchState.avg_p1
+    if (playerId === match?.player2_id) return matchState.avg_p2
+    if (playerId === match?.player3_id) return matchState.avg_p3 ?? 0
+    if (playerId === match?.player4_id) return matchState.avg_p4 ?? 0
+    return 0
   }
 
-  function handleDelete() {
-    setInputValue((prev) => prev.slice(0, -1))
-  }
+  // ---------------------------------------------------------------------------
+  // Confirm handler
+  // ---------------------------------------------------------------------------
 
-  async function handleConfirm() {
-    if (!matchId || !activePlayerId || inputValue === '') return
-    const total = parseInt(inputValue, 10)
-    if (isNaN(total) || total < 0 || total > 180) return
+  async function handleConfirm(
+    dart1: number,
+    dart2: number,
+    dart3: number,
+    bounceFlags: boolean[],
+    robinHoodFlags: boolean[],
+  ) {
+    if (!matchId || !activePlayerId) return
 
     setSubmitting(true)
-    setInputValue('')
 
-    const [d1, d2, d3] = splitTotal(total)
     try {
       const res: VisitResponse = await recordVisit(parseInt(matchId, 10), {
         player_id: activePlayerId,
-        dart1: d1,
-        dart2: d2,
-        dart3: d3,
-        bounce_flags: [false, false, false],
-        robin_hood_flags: [false, false, false],
+        dart1,
+        dart2,
+        dart3,
+        bounce_flags: bounceFlags,
+        robin_hood_flags: robinHoodFlags,
       })
 
       if (res.is_bust) {
@@ -357,141 +455,132 @@ export default function ScoreEntryScreen() {
   // ---------------------------------------------------------------------------
 
   const winnerPlayer = winnerId != null ? playerMap.get(winnerId) : null
+  const isTeam1Active =
+    activePlayerId != null && team1Ids.includes(activePlayerId)
 
   return (
     <div className="score-screen">
       {/* ---- header ---- */}
       <div className="score-header">
         <span className="score-round-label">{roundLabel(match.round_type, match.round_number)}</span>
-        {matchState.single_out_mode && !showSingleOutBanner && (
-          <span className="score-single-out-badge">Single-Out</span>
+        {showSingleOutBanner && (
+          <span className="score-single-out-badge" role="alert">
+            Single-Out aktiv
+          </span>
         )}
       </div>
-
-      {/* ---- single-out warning banner ---- */}
-      {showSingleOutBanner && (
-        <div className="score-single-out-banner" role="alert">
-          ⚠ Single-Out aktiv
-        </div>
-      )}
 
       {/* ---- score panels ---- */}
       <div className={`score-panels${isDoubles ? ' score-panels--doubles' : ''}`}>
         {/* Team 1 */}
-        <div className="score-team">
-          {team1Ids.map((pid) => (
-            <div
-              key={pid}
-              className={isDoubles ? 'score-doubles-player-wrapper' : ''}
-              onClick={
-                isDoubles && !matchFinished
-                  ? () => {
-                      setDoublesActivePlayer(pid)
-                      setInputValue('')
-                    }
-                  : undefined
-              }
-              role={isDoubles && !matchFinished ? 'button' : undefined}
-              tabIndex={isDoubles && !matchFinished ? 0 : undefined}
-              onKeyDown={
-                isDoubles && !matchFinished
-                  ? (e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+        <div
+          className={`score-team${team1Ids.includes(activePlayerId ?? -1) ? ' score-team--active' : ''}`}
+        >
+          <div className="score-team-players">
+            {team1Ids.map((pid) => (
+              <div
+                key={pid}
+                className={`score-player-row${pid === activePlayerId ? ' score-player-row--active' : ''}`}
+                onClick={
+                  isDoubles && !matchFinished
+                    ? () => {
                         setDoublesActivePlayer(pid)
-                        setInputValue('')
                       }
-                    }
-                  : undefined
-              }
-              aria-label={
-                isDoubles && !matchFinished
-                  ? `${playerMap.get(pid)?.name ?? '?'} auswählen`
-                  : undefined
-              }
-            >
-              <PlayerPanel
-                player={playerMap.get(pid)}
-                remaining={matchState.remaining_p1}
-                visitCount={matchState.visit_count_p1}
-                isActive={pid === activePlayerId}
-                isBust={bustActive && pid === activePlayerId}
-              />
+                    : undefined
+                }
+                role={isDoubles && !matchFinished ? 'button' : undefined}
+                tabIndex={isDoubles && !matchFinished ? 0 : undefined}
+                onKeyDown={
+                  isDoubles && !matchFinished
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setDoublesActivePlayer(pid)
+                      }
+                    : undefined
+                }
+                aria-label={
+                  isDoubles && !matchFinished
+                    ? `${playerMap.get(pid)?.name ?? '?'} auswählen`
+                    : undefined
+                }
+              >
+                {pid === activePlayerId && <span className="score-active-arrow">{'>'}</span>}
+                <span className="score-player-name">{playerMap.get(pid)?.name ?? '—'}</span>
+                <span className="score-player-avg">{formatAvg(playerAvg(pid))}</span>
+              </div>
+            ))}
+          </div>
+          <div className={`score-remaining${bustActive && isTeam1Active ? ' score-remaining--bust' : ''}`}>
+            {String(matchState.remaining_p1)}
+            {matchState.last_visit_total != null && team1Ids.includes(activePlayerId ?? -1) && (
+              <span className="score-last-visit">({matchState.last_visit_total})</span>
+            )}
+          </div>
+          {matchState.checkout_suggestion != null && isTeam1Active && !matchFinished && (
+            <div className="score-checkout">
+              {matchState.checkout_suggestion.darts.join(' ')}
             </div>
-          ))}
+          )}
         </div>
 
         <div className="score-vs">VS</div>
 
         {/* Team 2 */}
-        <div className="score-team">
-          {team2Ids.map((pid) => (
-            <div
-              key={pid}
-              className={isDoubles ? 'score-doubles-player-wrapper' : ''}
-              onClick={
-                isDoubles && !matchFinished
-                  ? () => {
-                      setDoublesActivePlayer(pid)
-                      setInputValue('')
-                    }
-                  : undefined
-              }
-              role={isDoubles && !matchFinished ? 'button' : undefined}
-              tabIndex={isDoubles && !matchFinished ? 0 : undefined}
-              onKeyDown={
-                isDoubles && !matchFinished
-                  ? (e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+        <div
+          className={`score-team${team2Ids.includes(activePlayerId ?? -1) ? ' score-team--active' : ''}`}
+        >
+          <div className="score-team-players">
+            {team2Ids.map((pid) => (
+              <div
+                key={pid}
+                className={`score-player-row${pid === activePlayerId ? ' score-player-row--active' : ''}`}
+                onClick={
+                  isDoubles && !matchFinished
+                    ? () => {
                         setDoublesActivePlayer(pid)
-                        setInputValue('')
                       }
-                    }
-                  : undefined
-              }
-              aria-label={
-                isDoubles && !matchFinished
-                  ? `${playerMap.get(pid)?.name ?? '?'} auswählen`
-                  : undefined
-              }
-            >
-              <PlayerPanel
-                player={playerMap.get(pid)}
-                remaining={matchState.remaining_p2}
-                visitCount={matchState.visit_count_p2}
-                isActive={pid === activePlayerId}
-                isBust={bustActive && pid === activePlayerId}
-              />
+                    : undefined
+                }
+                role={isDoubles && !matchFinished ? 'button' : undefined}
+                tabIndex={isDoubles && !matchFinished ? 0 : undefined}
+                onKeyDown={
+                  isDoubles && !matchFinished
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setDoublesActivePlayer(pid)
+                      }
+                    : undefined
+                }
+                aria-label={
+                  isDoubles && !matchFinished
+                    ? `${playerMap.get(pid)?.name ?? '?'} auswählen`
+                    : undefined
+                }
+              >
+                {pid === activePlayerId && <span className="score-active-arrow">{'>'}</span>}
+                <span className="score-player-name">{playerMap.get(pid)?.name ?? '—'}</span>
+                <span className="score-player-avg">{formatAvg(playerAvg(pid))}</span>
+              </div>
+            ))}
+          </div>
+          <div className={`score-remaining${bustActive && !isTeam1Active ? ' score-remaining--bust' : ''}`}>
+            {String(matchState.remaining_p2)}
+            {matchState.last_visit_total != null && team2Ids.includes(activePlayerId ?? -1) && (
+              <span className="score-last-visit">({matchState.last_visit_total})</span>
+            )}
+          </div>
+          {matchState.checkout_suggestion != null && !isTeam1Active && activePlayerId != null && !matchFinished && (
+            <div className="score-checkout">
+              {matchState.checkout_suggestion.darts.join(' ')}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
       {/* ---- doubles hint ---- */}
       {isDoubles && !matchFinished && doublesActivePlayer == null && (
         <p className="score-doubles-hint" role="status">
-          Bitte Spieler antippen, der wirft
+          Spieler antippen, der wirft
         </p>
       )}
-
-      {/* ---- active player indicator (singles) ---- */}
-      {!isDoubles && activePlayerId != null && !matchFinished && (
-        <div className="score-active-indicator" aria-live="polite">
-          Am Zug: <strong>{playerMap.get(activePlayerId)?.name ?? '—'}</strong>
-        </div>
-      )}
-
-      {/* ---- checkout suggestion ---- */}
-      {matchState.checkout_suggestion != null &&
-        remainingForPlayer(activePlayerId) <= 170 &&
-        !matchFinished && (
-          <div className="score-checkout" aria-live="polite">
-            <span className="score-checkout-label">Checkout:</span>
-            {matchState.checkout_suggestion.darts.join(' → ')}
-            {matchState.checkout_suggestion.is_finish && (
-              <span className="score-checkout-finish"> (Finish!)</span>
-            )}
-          </div>
-        )}
 
       {/* ---- error ---- */}
       {error && (
@@ -500,13 +589,10 @@ export default function ScoreEntryScreen() {
         </p>
       )}
 
-      {/* ---- numpad ---- */}
+      {/* ---- dart field selector ---- */}
       {!matchFinished && (
-        <Numpad
-          value={inputValue}
-          onDigit={handleDigit}
-          onDelete={handleDelete}
-          onConfirm={() => void handleConfirm()}
+        <DartFieldSelector
+          onConfirm={(d1, d2, d3, bounce, rh) => void handleConfirm(d1, d2, d3, bounce, rh)}
           disabled={submitting || activePlayerId == null}
         />
       )}
@@ -528,33 +614,18 @@ export default function ScoreEntryScreen() {
             <div className="score-overlay-title">Spiel beendet!</div>
             {winnerPlayer != null && (
               <div className="score-overlay-winner">
-                {winnerPlayer.photo_path && (
-                  <img
-                    className="score-overlay-photo"
-                    src={playerPhotoUrl(winnerPlayer.photo_path)}
-                    alt={winnerPlayer.name}
-                  />
-                )}
                 <div className="score-overlay-winner-name">Sieger: {winnerPlayer.name}</div>
               </div>
             )}
             <div className="score-overlay-scores">
-              {team1Ids.map((pid) => {
-                const p = playerMap.get(pid)
-                return (
-                  <span key={pid} className="score-overlay-score-entry">
-                    {p?.name ?? '—'}: {String(matchState.remaining_p1)} Rest
-                  </span>
-                )
-              })}
-              {team2Ids.map((pid) => {
-                const p = playerMap.get(pid)
-                return (
-                  <span key={pid} className="score-overlay-score-entry">
-                    {p?.name ?? '—'}: {String(matchState.remaining_p2)} Rest
-                  </span>
-                )
-              })}
+              <span className="score-overlay-score-entry">
+                {team1Ids.map((pid) => playerMap.get(pid)?.name ?? '—').join(' & ')}:{' '}
+                {String(matchState.remaining_p1)} Rest
+              </span>
+              <span className="score-overlay-score-entry">
+                {team2Ids.map((pid) => playerMap.get(pid)?.name ?? '—').join(' & ')}:{' '}
+                {String(matchState.remaining_p2)} Rest
+              </span>
             </div>
             <button
               className="score-btn score-btn--primary"
@@ -568,7 +639,6 @@ export default function ScoreEntryScreen() {
       )}
 
       {/* Placeholder hook points for Task 17 (special event popup) and Task 18 (audio) */}
-      {/* These will be wired up when the respective tasks are implemented. */}
     </div>
   )
 }

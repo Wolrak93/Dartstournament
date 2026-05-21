@@ -36,15 +36,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.25rem;
   background: #1a1a2e;
   border-bottom: 1px solid #2a2a4a;
   flex-shrink: 0;
 }
 
 .score-round-label {
-  font-size: 0.95rem;
-  color: #9b9bc8;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e0e0ff;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -60,19 +61,6 @@
   letter-spacing: 0.05em;
 }
 
-/* ---- Single-out banner ---- */
-
-.score-single-out-banner {
-  background: #ff9800;
-  color: #000;
-  text-align: center;
-  font-weight: 700;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  flex-shrink: 0;
-}
-
 /* ---- Score panels ---- */
 
 .score-panels {
@@ -80,134 +68,137 @@
   flex-direction: row;
   align-items: stretch;
   justify-content: space-between;
-  gap: 0;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.score-panels--doubles .score-team {
-  gap: 0.5rem;
-}
-
-.score-team {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  flex: 1 1 0;
-  gap: 0;
+  flex-shrink: 0;
 }
 
 .score-vs {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #555;
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
   flex-shrink: 0;
 }
 
-/* ---- Player panel ---- */
+/* ---- Team block ---- */
 
-.score-player-panel {
+.score-team {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1 1 0;
-  padding: 1rem 0.5rem;
-  background: #1a1a2e;
-  border: 2px solid transparent;
-  transition:
-    border-color 0.2s,
-    background 0.2s;
+  padding: 0.6rem 1rem 0.5rem;
+  background: #14142a;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.score-team--active {
+  background: #1a2035;
+  border-bottom-color: #4fc3f7;
+}
+
+/* ---- Player rows inside a team ---- */
+
+.score-team-players {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.4rem;
+}
+
+.score-player-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.1rem 0;
   cursor: default;
+  border-radius: 4px;
+  transition: background 0.15s;
 }
 
-.score-player-panel--active {
-  border-color: #4fc3f7;
-  background: #1e2a3a;
+.score-player-row[role='button'] {
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
 }
 
-.score-player-panel--bust {
-  border-color: #ff5252;
-  background: #2a1a1a;
+.score-player-row[role='button']:hover {
+  background: #2a2a4a;
+}
+
+.score-player-row--active .score-player-name {
+  color: #4fc3f7;
+}
+
+.score-active-arrow {
+  color: #4fc3f7;
+  font-weight: 900;
+  font-size: 1rem;
+  width: 0.9rem;
+  flex-shrink: 0;
+}
+
+.score-player-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e0ff;
+  flex: 1 1 auto;
+}
+
+.score-player-avg {
+  font-size: 0.85rem;
+  color: #9b9bc8;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ---- Remaining score ---- */
+
+.score-remaining {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.score-team--active .score-remaining {
+  color: #4fc3f7;
+}
+
+.score-remaining--bust {
+  color: #ff5252 !important;
   animation: bust-flash 0.4s ease-in-out 3;
 }
 
 @keyframes bust-flash {
   0%,
   100% {
-    background: #2a1a1a;
+    opacity: 1;
   }
   50% {
-    background: #5a1a1a;
+    opacity: 0.3;
   }
 }
 
-.score-player-photo {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-  background: #2a2a4a;
+.score-last-visit {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #9b9bc8;
 }
 
-.score-player-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+/* ---- Checkout suggestion (inside team block) ---- */
 
-.score-player-photo-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #2a2a4a, #3a3a6a);
-  border-radius: 50%;
-}
-
-.score-player-name {
+.score-checkout {
+  margin-top: 0.3rem;
   font-size: 1.1rem;
-  font-weight: 600;
-  color: #e0e0ff;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.score-remaining {
-  font-size: 3.5rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
-  margin-bottom: 0.25rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.score-player-panel--active .score-remaining {
-  color: #4fc3f7;
-}
-
-.score-player-panel--bust .score-remaining {
-  color: #ff5252;
-}
-
-.score-visit-count {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-/* ---- Doubles wrapper (clickable) ---- */
-
-.score-doubles-player-wrapper {
-  flex: 1 1 0;
-  cursor: pointer;
-  outline: none;
-}
-
-.score-doubles-player-wrapper:focus-visible .score-player-panel {
-  border-color: #4fc3f7;
+  font-weight: 700;
+  color: #a5d6a7;
+  letter-spacing: 0.05em;
 }
 
 /* ---- Doubles hint ---- */
@@ -215,47 +206,12 @@
 .score-doubles-hint {
   text-align: center;
   color: #9b9bc8;
-  font-size: 0.95rem;
-  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  padding: 0.3rem 1rem;
   margin: 0;
   flex-shrink: 0;
-}
-
-/* ---- Active indicator (singles) ---- */
-
-.score-active-indicator {
-  text-align: center;
-  color: #9b9bc8;
-  font-size: 0.95rem;
-  padding: 0.35rem 1rem;
-  flex-shrink: 0;
-}
-
-.score-active-indicator strong {
-  color: #4fc3f7;
-}
-
-/* ---- Checkout suggestion ---- */
-
-.score-checkout {
-  text-align: center;
-  background: #1a2a1a;
-  border: 1px solid #2a4a2a;
-  color: #a5d6a7;
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.score-checkout-label {
-  font-weight: 700;
-  margin-right: 0.5rem;
-  color: #66bb6a;
-}
-
-.score-checkout-finish {
-  color: #ff8a65;
-  font-weight: 700;
+  background: #111120;
+  border-top: 1px solid #2a2a4a;
 }
 
 /* ---- Inline error ---- */
@@ -269,90 +225,211 @@
   flex-shrink: 0;
 }
 
-/* ---- Numpad ---- */
+/* ---- Dart Field Selector ---- */
 
-.score-numpad {
+.dart-selector {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   background: #111120;
   border-top: 1px solid #2a2a4a;
-  padding: 0.75rem;
+  overflow: hidden;
+}
+
+/* Dart slots row */
+
+.dart-slots {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #0d0d1a;
+  border-bottom: 1px solid #2a2a4a;
+  align-items: stretch;
   flex-shrink: 0;
 }
 
-.score-input-display {
-  text-align: center;
-  font-size: 2.8rem;
-  font-weight: 800;
-  color: #fff;
-  min-height: 3.5rem;
+.dart-slot {
+  flex: 1 1 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.3rem;
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  font-size: 0.75rem;
+  min-height: 3.8rem;
+  touch-action: manipulation;
+}
+
+.dart-slot:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dart-slot--active {
+  border-color: #4fc3f7;
+  background: #1a2a3a;
+}
+
+.dart-slot--filled {
+  border-color: #555;
+}
+
+.dart-slot--active.dart-slot--filled {
+  border-color: #4fc3f7;
+}
+
+.dart-slot-number {
+  font-size: 0.65rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dart-slot-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #e0e0ff;
+  line-height: 1.1;
+}
+
+.dart-slot--active .dart-slot-value {
+  color: #4fc3f7;
+}
+
+.dart-slot-pts {
+  font-size: 0.7rem;
+  color: #9b9bc8;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
 }
 
-.score-input-placeholder {
-  color: #444;
-  font-weight: 400;
+/* DEL + CONFIRM buttons */
+
+.dart-slots-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
-.score-numpad-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-}
-
-.score-numpad-btn {
-  height: 3.5rem;
-  font-size: 1.6rem;
+.dart-btn {
+  padding: 0.4rem 1rem;
+  font-size: 1rem;
   font-weight: 700;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    background 0.1s,
-    transform 0.05s;
-  user-select: none;
+  transition: background 0.1s;
+  flex: 1 1 0;
+  min-width: 5rem;
 }
 
-.score-numpad-btn:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-.score-numpad-btn:disabled {
+.dart-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-.score-numpad-btn--digit {
-  background: #2a2a4a;
-  color: #e0e0ff;
-}
-
-.score-numpad-btn--digit:hover:not(:disabled) {
-  background: #3a3a6a;
-}
-
-.score-numpad-btn--del {
+.dart-btn--del {
   background: #3a2a1a;
   color: #ff9800;
-  font-size: 1.2rem;
 }
 
-.score-numpad-btn--del:hover:not(:disabled) {
+.dart-btn--del:hover:not(:disabled) {
   background: #5a3a1a;
 }
 
-.score-numpad-btn--confirm {
+.dart-btn--confirm {
   background: #1a4a2a;
   color: #66bb6a;
-  font-size: 1.8rem;
+  font-size: 1.4rem;
 }
 
-.score-numpad-btn--confirm:hover:not(:disabled) {
+.dart-btn--confirm:hover:not(:disabled) {
   background: #1a6a2a;
+}
+
+/* Field grid */
+
+.dart-field-grid {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem 0.5rem;
+  overflow-y: auto;
+}
+
+.dart-field-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+}
+
+.dart-field-btn {
+  flex: 1 1 0;
+  min-width: 2.2rem;
+  height: 2.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.08s,
+    transform 0.05s;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dart-field-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.dart-field-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Singles row — neutral grey */
+.dart-field-row--singles .dart-field-btn {
+  background: #2a2a42;
+  color: #e0e0ff;
+}
+
+.dart-field-row--singles .dart-field-btn:hover:not(:disabled) {
+  background: #3a3a5a;
+}
+
+/* Doubles row — green tint */
+.dart-field-row--doubles .dart-field-btn {
+  background: #1a3a2a;
+  color: #a5d6a7;
+}
+
+.dart-field-row--doubles .dart-field-btn:hover:not(:disabled) {
+  background: #1a5a3a;
+}
+
+/* Triples row — blue tint */
+.dart-field-row--triples .dart-field-btn {
+  background: #1a2a4a;
+  color: #90caf9;
+}
+
+.dart-field-row--triples .dart-field-btn:hover:not(:disabled) {
+  background: #1a3a6a;
 }
 
 /* ---- General button ---- */
@@ -440,14 +517,6 @@
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-}
-
-.score-overlay-photo {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #4fc3f7;
 }
 
 .score-overlay-winner-name {
