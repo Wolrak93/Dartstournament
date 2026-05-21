@@ -27,6 +27,21 @@ export interface TournamentCreateRequest {
 }
 
 // ---------------------------------------------------------------------------
+// Bull throw
+// ---------------------------------------------------------------------------
+
+export interface BullThrowRequest {
+  winner_id?: number | null
+  best_player_id?: number | null
+  best_opponent_id?: number | null
+}
+
+export interface BullThrowResponse {
+  starting_player_id: number
+  play_order: number[]
+}
+
+// ---------------------------------------------------------------------------
 // Standings
 // ---------------------------------------------------------------------------
 
