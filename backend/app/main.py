@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 import app.models  # noqa: F401
 from app.database import init_db
 from app.exceptions import AppError
-from app.routers import matches, players, tournaments
+from app.routers import matches, players, tournaments, ws
 
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 app.include_router(players.router)
 app.include_router(tournaments.router)
 app.include_router(matches.router)
+app.include_router(ws.router)
 
 
 # ---------------------------------------------------------------------------

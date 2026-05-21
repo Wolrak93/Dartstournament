@@ -34,6 +34,7 @@ from app.services.vorrunde import (
     generate_swiss_round,
     is_doubles_mode,
 )
+from app.websocket import manager
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
@@ -267,6 +268,11 @@ async def start_tournament(
     await update_tournament_status(db, tournament_id, TournamentStatus.vorrunde)
     await db.commit()
 
+    await manager.broadcast_tournament(
+        tournament_id,
+        {"type": "standings_update", "data": {"tournament_id": tournament_id}},
+    )
+
     for m in created_matches:
         await db.refresh(m)
     return [MatchRead.model_validate(m) for m in created_matches]
@@ -396,6 +402,11 @@ async def start_ko_phase(
 
     await update_tournament_status(db, tournament_id, TournamentStatus.ko)
     await db.commit()
+
+    await manager.broadcast_tournament(
+        tournament_id,
+        {"type": "bracket_update", "data": {"tournament_id": tournament_id}},
+    )
 
     for m in ko_matches:
         await db.refresh(m)
