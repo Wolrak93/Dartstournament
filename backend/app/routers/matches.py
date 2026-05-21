@@ -40,6 +40,7 @@ from app.services.match import (
     record_singles_bull_throw,
     should_switch_to_single_out,
 )
+from app.websocket import manager
 
 router = APIRouter(prefix="/matches", tags=["matches"])
 
@@ -163,6 +164,19 @@ async def record_bull_throw(
     )
     await db.commit()
 
+    await manager.broadcast_match(
+        match_id,
+        {
+            "type": "match_state",
+            "data": {
+                "match_id": match_id,
+                "status": "bull_throw",
+                "starting_player_id": starting_player_id,
+                "play_order": result.play_order,
+            },
+        },
+    )
+
     return BullThrowResponse(
         starting_player_id=starting_player_id,
         play_order=result.play_order,
@@ -189,6 +203,15 @@ async def start_match(
 
     await update_match_status(db, match_id=match_id, status=MatchStatus.in_progress)
     await db.commit()
+
+    await manager.broadcast_match(
+        match_id,
+        {
+            "type": "match_state",
+            "data": {"match_id": match_id, "status": "in_progress"},
+        },
+    )
+
     return {"match_id": match_id, "status": MatchStatus.in_progress}
 
 
@@ -314,6 +337,74 @@ async def record_visit(
 
     await db.commit()
 
+    event_items = [
+        SpecialEventItem(
+            event_type=e.event_type.value,
+            bonus_value=e.bonus_value,
+            count=e.count,
+        )
+        for e in events
+    ]
+
+    # Broadcast score update to all clients watching this match.
+    await manager.broadcast_match(
+        match_id,
+        {
+            "type": "score_update",
+            "data": {
+                "match_id": match_id,
+                "player_id": body.player_id,
+                "visit_number": visit_number,
+                "total": visit_result.total,
+                "is_bust": visit_result.is_bust,
+                "remaining_after": visit_result.remaining_after,
+                "match_finished": match_finished,
+                "winner_id": winner_id,
+                "special_events": [
+                    {
+                        "event_type": e.event_type,
+                        "bonus_value": e.bonus_value,
+                        "count": e.count,
+                    }
+                    for e in event_items
+                ],
+            },
+        },
+    )
+
+    # Broadcast each special event individually so the frontend can show popups.
+    for e in event_items:
+        await manager.broadcast_match(
+            match_id,
+            {
+                "type": "special_event",
+                "data": {
+                    "match_id": match_id,
+                    "player_id": body.player_id,
+                    "event_type": e.event_type,
+                    "bonus_value": e.bonus_value,
+                    "count": e.count,
+                },
+            },
+        )
+
+    # Notify tournament channel when a match finishes (standings may have changed).
+    if match_finished:
+        await manager.broadcast_match(
+            match_id,
+            {
+                "type": "match_finished",
+                "data": {"match_id": match_id, "winner_id": winner_id},
+            },
+        )
+        await manager.broadcast_tournament(
+            match.tournament_id,
+            {
+                "type": "standings_update",
+                "data": {"tournament_id": match.tournament_id},
+            },
+        )
+
     return VisitResponse(
         visit_id=visit.id,
         player_id=body.player_id,
@@ -323,14 +414,7 @@ async def record_visit(
         remaining_after=visit_result.remaining_after,
         match_finished=match_finished,
         winner_id=winner_id,
-        special_events=[
-            SpecialEventItem(
-                event_type=e.event_type.value,
-                bonus_value=e.bonus_value,
-                count=e.count,
-            )
-            for e in events
-        ],
+        special_events=event_items,
     )
 
 
@@ -458,8 +542,22 @@ async def finish_match(
             "player_not_in_match",
         )
 
+    tournament_id = match.tournament_id
     await update_match_winner(db, match_id=match_id, winner_id=body.winner_id)
     await db.commit()
+
+    await manager.broadcast_match(
+        match_id,
+        {
+            "type": "match_finished",
+            "data": {"match_id": match_id, "winner_id": body.winner_id},
+        },
+    )
+    await manager.broadcast_tournament(
+        tournament_id,
+        {"type": "standings_update", "data": {"tournament_id": tournament_id}},
+    )
+
     return {
         "match_id": match_id,
         "winner_id": body.winner_id,
