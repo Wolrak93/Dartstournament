@@ -76,3 +76,15 @@ async def update_match_winner(
     match.status = MatchStatus.finished
     await db.flush()
     return match
+
+
+async def set_starting_player(
+    db: AsyncSession, match_id: int, starting_player_id: int
+) -> Match:
+    match = await get_match_by_id(db, match_id)
+    if match is None:
+        raise ValueError(f"Match {match_id} not found")
+    match.starting_player_id = starting_player_id
+    match.status = MatchStatus.bull_throw
+    await db.flush()
+    return match

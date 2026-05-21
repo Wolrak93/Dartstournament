@@ -51,6 +51,10 @@ class Match(Base):
     winner_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("players.id"), nullable=True
     )
+    # Set after bull throw: the player who throws first in this leg.
+    starting_player_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("players.id"), nullable=True
+    )
     status: Mapped[MatchStatus] = mapped_column(
         Enum(MatchStatus), nullable=False, default=MatchStatus.pending
     )
