@@ -78,13 +78,107 @@ async def update_match_winner(
     return match
 
 
+async def update_standings_after_vorrunde_match(
+    db: AsyncSession,
+    match: Match,
+    winner_id: int,
+) -> None:
+    """Update reg_points and avg_score for all players after a Vorrunde match."""
+    from app.repositories.visit_repo import list_visits_by_tournament_and_player
+    from app.repositories.tournament_player_repo import (
+        get_tournament_player,
+        update_tournament_player_standing,
+    )
+
+    team1_ids = [pid for pid in [match.player1_id, match.player3_id] if pid is not None]
+    team2_ids = [pid for pid in [match.player2_id, match.player4_id] if pid is not None]
+    winner_team = team1_ids if winner_id in team1_ids else team2_ids
+
+    for player_id in team1_ids + team2_ids:
+        visits = await list_visits_by_tournament_and_player(
+            db, match.tournament_id, player_id
+        )
+        avg = sum(v.total for v in visits) / len(visits) if visits else 0.0
+
+        tp = await get_tournament_player(db, match.tournament_id, player_id)
+        if tp is None:
+            continue
+
+        new_reg = tp.reg_points + (1.0 if player_id in winner_team else 0.0)
+        await update_tournament_player_standing(
+            db,
+            tournament_id=match.tournament_id,
+            player_id=player_id,
+            reg_points=new_reg,
+            avg_score=avg,
+        )
+
+
+async def reopen_match(
+    db: AsyncSession,
+    match_id: int,
+) -> Match:
+    """Revert a finished match back to in_progress (e.g. after an undo)."""
+    match = await get_match_by_id(db, match_id)
+    if match is None:
+        raise ValueError(f"Match {match_id} not found")
+    match.status = MatchStatus.in_progress
+    match.winner_id = None
+    await db.flush()
+    return match
+
+
+async def undo_standings_after_vorrunde_match(
+    db: AsyncSession,
+    match: Match,
+    former_winner_id: int,
+) -> None:
+    """Reverse the standings update for a Vorrunde match when its last visit is undone.
+
+    The visit must already be deleted from the DB before calling this so that
+    the avg recalculation reflects the correct remaining visits.
+    """
+    from app.repositories.visit_repo import list_visits_by_tournament_and_player
+    from app.repositories.tournament_player_repo import (
+        get_tournament_player,
+        update_tournament_player_standing,
+    )
+
+    team1_ids = [pid for pid in [match.player1_id, match.player3_id] if pid is not None]
+    team2_ids = [pid for pid in [match.player2_id, match.player4_id] if pid is not None]
+    winner_team = team1_ids if former_winner_id in team1_ids else team2_ids
+
+    for player_id in team1_ids + team2_ids:
+        visits = await list_visits_by_tournament_and_player(
+            db, match.tournament_id, player_id
+        )
+        avg = sum(v.total for v in visits) / len(visits) if visits else 0.0
+
+        tp = await get_tournament_player(db, match.tournament_id, player_id)
+        if tp is None:
+            continue
+
+        new_reg = tp.reg_points - (1.0 if player_id in winner_team else 0.0)
+        await update_tournament_player_standing(
+            db,
+            tournament_id=match.tournament_id,
+            player_id=player_id,
+            reg_points=max(0.0, new_reg),
+            avg_score=avg,
+        )
+
+
 async def set_starting_player(
-    db: AsyncSession, match_id: int, starting_player_id: int
+    db: AsyncSession,
+    match_id: int,
+    starting_player_id: int,
+    second_player_id: int | None = None,
 ) -> Match:
     match = await get_match_by_id(db, match_id)
     if match is None:
         raise ValueError(f"Match {match_id} not found")
     match.starting_player_id = starting_player_id
+    match.second_player_id = second_player_id
     match.status = MatchStatus.bull_throw
     await db.flush()
     return match

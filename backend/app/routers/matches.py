@@ -10,13 +10,18 @@ from app.exceptions import bad_request, conflict, not_found
 from app.models.match import MatchStatus, RoundType
 from app.repositories.match_repo import (
     get_match_by_id,
+    reopen_match,
     set_starting_player,
+    undo_standings_after_vorrunde_match,
     update_match_status,
     update_match_winner,
+    update_standings_after_vorrunde_match,
 )
 from app.repositories.visit_repo import (
+    get_last_visit_by_match,
     list_visits_by_match,
     list_visits_by_match_and_player,
+    list_visits_by_match_recent_first,
 )
 from app.schemas.match import (
     BullThrowRequest,
@@ -26,6 +31,8 @@ from app.schemas.match import (
     MatchRead,
     MatchStateResponse,
     SpecialEventItem,
+    UndoVisitResponse,
+    VisitHistoryItem,
     VisitRequest,
     VisitResponse,
 )
@@ -61,9 +68,24 @@ async def _get_match_or_404(db: AsyncSession, match_id: int):
     return match
 
 
-def _build_dart(score: int, bounce: bool, robin_hood: bool) -> Dart:
-    """Build a Dart object from a raw score and special flags."""
+_BAND_MAP: dict[str, DartBand] = {
+    "single": DartBand.SINGLE,
+    "double": DartBand.DOUBLE,
+    "triple": DartBand.TRIPLE,
+    "bull": DartBand.BULL,
+    "bullseye": DartBand.BULLSEYE,
+    "miss": DartBand.MISS,
+}
+
+
+def _build_dart(score: int, bounce: bool, robin_hood: bool, band: str = "") -> Dart:
+    """Build a Dart object from a raw score, special flags, and an explicit band.
+
+    The explicit band avoids ambiguous inference: e.g. score=36 is both D18 and T12.
+    If band is empty or unrecognised, the score is inferred via dart_from_score().
+    """
     _miss = Dart(score=0, band=DartBand.MISS, number=0)
+
     if bounce:
         base = dart_from_score(score) if score > 0 else _miss
         return Dart(score=base.score, band=base.band, number=base.number, bounce=True)
@@ -74,6 +96,20 @@ def _build_dart(score: int, bounce: bool, robin_hood: bool) -> Dart:
         )
     if score == 0:
         return _miss
+
+    explicit_band = _BAND_MAP.get(band)
+    if explicit_band is not None:
+        number = 0
+        if explicit_band in (DartBand.BULL, DartBand.BULLSEYE):
+            number = 25
+        elif explicit_band == DartBand.SINGLE:
+            number = score
+        elif explicit_band == DartBand.DOUBLE:
+            number = score // 2
+        elif explicit_band == DartBand.TRIPLE:
+            number = score // 3
+        return Dart(score=score, band=explicit_band, number=number)
+
     return dart_from_score(score)
 
 
@@ -83,31 +119,56 @@ def _compute_remaining(visits, starting_score: int) -> int:
     return starting_score - scored
 
 
-def _current_player_id(match, visit_counts: dict[int, int]) -> int | None:
-    """Determine whose turn it is in a singles match.
+def _player_avg(visits: list) -> float:
+    """3-dart average: total scored across all visits / number of visits."""
+    if not visits:
+        return 0.0
+    return sum(v.total for v in visits) / len(visits)
 
-    For doubles the frontend tracks the individual player; here we just return
-    None to signal that it's not determinable from visit counts alone.
+
+def _current_player_id(match, visit_counts: dict[int, int]) -> int | None:
+    """Determine whose turn it is based on visit counts and starting player.
+
+    Singles: alternates p1/p2 based on visit counts.
+    Doubles: fixed rotation [sp, opp1, sp_partner, opp2] derived from visit counts.
     """
     if match.starting_player_id is None:
         return None
 
     is_doubles = match.player3_id is not None
 
-    if is_doubles:
-        # Cannot determine individual player turn server-side
-        # without storing full play order.
-        return None
+    if not is_doubles:
+        p1 = match.player1_id
+        p2 = match.player2_id
+        c1 = visit_counts.get(p1, 0)
+        c2 = visit_counts.get(p2, 0)
+        if match.starting_player_id == p1:
+            return p1 if c1 == c2 else p2
+        return p2 if c1 == c2 else p1
 
-    p1 = match.player1_id
-    p2 = match.player2_id
-    c1 = visit_counts.get(p1, 0)
-    c2 = visit_counts.get(p2, 0)
-    # If starting_player is p1: p1 goes when counts are equal
-    if match.starting_player_id == p1:
-        return p1 if c1 == c2 else p2
-    # starting_player is p2: p2 goes when counts are equal
-    return p2 if c1 == c2 else p1
+    # Doubles: fixed rotation [sp, opp1, sp_partner, opp2].
+    # opp1 is stored in second_player_id from the bull throw result.
+    sp = match.starting_player_id
+    team1 = [match.player1_id, match.player3_id]
+    team2 = [match.player2_id, match.player4_id]
+
+    if sp in team1:
+        sp_partner = team1[1] if team1[0] == sp else team1[0]
+        opposing = team2
+    else:
+        sp_partner = team2[1] if team2[0] == sp else team2[0]
+        opposing = team1
+
+    if match.second_player_id is not None and match.second_player_id in opposing:
+        opp1 = match.second_player_id
+        opp2 = opposing[1] if opposing[0] == opp1 else opposing[0]
+    else:
+        # Fallback: sort by id (matches without second_player_id stored)
+        opp1, opp2 = sorted(opposing)
+
+    turn_order = [sp, opp1, sp_partner, opp2]
+    total_visits = sum(visit_counts.get(pid, 0) for pid in turn_order)
+    return turn_order[total_visits % 4]
 
 
 # ---------------------------------------------------------------------------
@@ -173,8 +234,12 @@ async def record_bull_throw(
         raise bad_request(str(exc), "invalid_bull_throw") from exc
 
     starting_player_id = result.play_order[0]
+    second_player_id = result.play_order[1] if is_doubles else None
     await set_starting_player(
-        db, match_id=match_id, starting_player_id=starting_player_id
+        db,
+        match_id=match_id,
+        starting_player_id=starting_player_id,
+        second_player_id=second_player_id,
     )
     await db.commit()
 
@@ -302,18 +367,22 @@ async def record_visit(
             team_visits = team_visits + team_visits_p4
         remaining = _compute_remaining(team_visits, match.starting_score_p2)
 
-    # Determine single_out_mode
+    # Determine single_out_mode using the TEAM's combined visit count.
+    # team_visits already holds all visits for this player's team (computed above).
+    # The current visit will be the (len(team_visits) + 1)-th team visit.
     round_type_str = match.round_type.value
     if round_type_str == "lightning":
         single_out_mode = True
     else:
-        single_out_mode = should_switch_to_single_out(visit_number, round_type_str)
+        team_visit_number = len(team_visits) + 1
+        single_out_mode = should_switch_to_single_out(team_visit_number, round_type_str)
 
     # Build Dart objects
     scores = [body.dart1, body.dart2, body.dart3]
     bounces = body.bounce_flags
     robins = body.robin_hood_flags
-    darts = [_build_dart(scores[i], bounces[i], robins[i]) for i in range(3)]
+    bands = body.dart_bands if len(body.dart_bands) == 3 else ["", "", ""]
+    darts = [_build_dart(scores[i], bounces[i], robins[i], bands[i]) for i in range(3)]
 
     # Process visit
     visit_result = process_visit(
@@ -348,6 +417,8 @@ async def record_visit(
     if match_finished:
         winner_id = body.player_id
         await update_match_winner(db, match_id=match_id, winner_id=winner_id)
+        if match.round_type == RoundType.vorrunde:
+            await update_standings_after_vorrunde_match(db, match, winner_id)
 
     await db.commit()
 
@@ -470,18 +541,44 @@ async def get_match_state(
     count_p1 = visit_counts.get(match.player1_id, 0)
     count_p2 = visit_counts.get(match.player2_id, 0)
 
+    # Per-player averages and doubles-only counts
+    avg_p1 = _player_avg(visits_p1)
+    avg_p2 = _player_avg(visits_p2)
+    if match.player3_id is not None:
+        count_p3: int | None = visit_counts.get(match.player3_id, 0)
+        count_p4: int | None = visit_counts.get(match.player4_id, 0) if match.player4_id else 0
+        avg_p3: float | None = _player_avg(visits_p3)
+        avg_p4: float | None = _player_avg(visits_p4)
+    else:
+        count_p3 = None
+        count_p4 = None
+        avg_p3 = None
+        avg_p4 = None
+
+    # Most recent visit score (for display purposes)
+    last_visit_total: int | None = all_visits[-1].total if all_visits else None
+
     current_player_id = _current_player_id(match, visit_counts)
 
-    # Determine single_out_mode for current player
+    # Determine single_out_mode using the TEAM's combined visit count.
     round_type_str = match.round_type.value
     if current_player_id is not None:
-        current_visit_count = visit_counts.get(current_player_id, 0) + 1
+        is_doubles_state = match.player3_id is not None
+        if is_doubles_state:
+            if current_player_id in {match.player1_id, match.player3_id}:
+                team_done = visit_counts.get(match.player1_id, 0) + visit_counts.get(
+                    match.player3_id, 0
+                )
+            else:
+                team_done = visit_counts.get(match.player2_id, 0) + visit_counts.get(
+                    match.player4_id or 0, 0
+                )
+        else:
+            team_done = visit_counts.get(current_player_id, 0)
         if round_type_str == "lightning":
             single_out_mode = True
         else:
-            single_out_mode = should_switch_to_single_out(
-                current_visit_count, round_type_str
-            )
+            single_out_mode = should_switch_to_single_out(team_done + 1, round_type_str)
     else:
         single_out_mode = round_type_str == "lightning"
 
@@ -520,9 +617,107 @@ async def get_match_state(
         remaining_p2=remaining_p2,
         visit_count_p1=count_p1,
         visit_count_p2=count_p2,
+        visit_count_p3=count_p3,
+        visit_count_p4=count_p4,
+        avg_p1=avg_p1,
+        avg_p2=avg_p2,
+        avg_p3=avg_p3,
+        avg_p4=avg_p4,
+        last_visit_total=last_visit_total,
         single_out_mode=single_out_mode,
         checkout_suggestion=checkout,
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /matches/{id}/visits  (visit history)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/{match_id}/visits", response_model=list[VisitHistoryItem])
+async def get_match_visits(
+    match_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> list[VisitHistoryItem]:
+    await _get_match_or_404(db, match_id)
+    visits = await list_visits_by_match_recent_first(db, match_id)
+    return [
+        VisitHistoryItem(
+            visit_id=v.id,
+            player_id=v.player_id,
+            visit_number=v.visit_number,
+            dart1=v.dart1,
+            dart2=v.dart2,
+            dart3=v.dart3,
+            total=v.total,
+            is_bust=v.is_bust,
+        )
+        for v in visits
+    ]
+
+
+# ---------------------------------------------------------------------------
+# DELETE /matches/{id}/visits/last  (undo last visit)
+# ---------------------------------------------------------------------------
+
+
+@router.delete("/{match_id}/visits/last", response_model=UndoVisitResponse)
+async def undo_last_visit(
+    match_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> UndoVisitResponse:
+    match = await _get_match_or_404(db, match_id)
+
+    if match.status not in (MatchStatus.in_progress, MatchStatus.finished):
+        raise conflict(
+            f"Cannot undo visits when match status is '{match.status}'.",
+            "invalid_match_status",
+        )
+
+    last_visit = await get_last_visit_by_match(db, match_id)
+    if last_visit is None:
+        raise bad_request("No visits to undo for this match.", "no_visits")
+
+    visit_id = last_visit.id
+    former_winner_id = match.winner_id
+    was_finished = match.status == MatchStatus.finished
+
+    # Delete special events linked to this visit
+    from sqlalchemy import delete as sql_delete
+
+    from app.models.special_event import SpecialEvent
+
+    await db.execute(sql_delete(SpecialEvent).where(SpecialEvent.visit_id == visit_id))
+
+    # Delete the visit itself
+    await db.delete(last_visit)
+    await db.flush()
+
+    # If match was finished: undo standings (Vorrunde only) and reopen
+    if was_finished:
+        if match.round_type == RoundType.vorrunde and former_winner_id is not None:
+            await undo_standings_after_vorrunde_match(db, match, former_winner_id)
+        await reopen_match(db, match_id)
+
+    await db.commit()
+
+    await manager.broadcast_match(
+        match_id,
+        {"type": "visit_undone", "data": {"match_id": match_id, "undone_visit_id": visit_id}},
+    )
+
+    if was_finished:
+        await manager.broadcast_match(
+            match_id,
+            {"type": "match_state", "data": {"match_id": match_id, "status": "in_progress"}},
+        )
+        if match.round_type == RoundType.vorrunde:
+            await manager.broadcast_tournament(
+                match.tournament_id,
+                {"type": "standings_update", "data": {"tournament_id": match.tournament_id}},
+            )
+
+    return UndoVisitResponse(undone_visit_id=visit_id, match_id=match_id)
 
 
 # ---------------------------------------------------------------------------

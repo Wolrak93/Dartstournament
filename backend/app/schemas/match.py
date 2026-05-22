@@ -95,6 +95,8 @@ class VisitRequest(BaseModel):
     dart1–dart3: raw score per dart (0–60; 25 = bull; 50 = bullseye).
     bounce_flags: True if that dart bounced out (scores 0).
     robin_hood_flags: True if that dart stuck in another dart (scores 0).
+    dart_bands: explicit band for each dart ('single','double','triple','bull','bullseye','miss').
+                Required to distinguish ambiguous scores like D18 vs T12 (both = 36).
     """
 
     player_id: int
@@ -103,6 +105,7 @@ class VisitRequest(BaseModel):
     dart3: int = Field(..., ge=0, le=60)
     bounce_flags: list[bool] = Field(default_factory=lambda: [False, False, False])
     robin_hood_flags: list[bool] = Field(default_factory=lambda: [False, False, False])
+    dart_bands: list[str] = Field(default_factory=lambda: ["", "", ""])
 
 
 class SpecialEventItem(BaseModel):
@@ -139,9 +142,32 @@ class MatchStateResponse(BaseModel):
     remaining_p2: int
     visit_count_p1: int
     visit_count_p2: int
+    visit_count_p3: int | None  # doubles only
+    visit_count_p4: int | None  # doubles only
+    avg_p1: float               # 3-dart average player 1
+    avg_p2: float               # 3-dart average player 2
+    avg_p3: float | None        # doubles only
+    avg_p4: float | None        # doubles only
+    last_visit_total: int | None  # score of the most recent visit
     single_out_mode: bool
     checkout_suggestion: CheckoutSuggestionResponse | None
 
 
 class FinishMatchRequest(BaseModel):
     winner_id: int
+
+
+class VisitHistoryItem(BaseModel):
+    visit_id: int
+    player_id: int
+    visit_number: int
+    dart1: int
+    dart2: int
+    dart3: int
+    total: int
+    is_bust: bool
+
+
+class UndoVisitResponse(BaseModel):
+    undone_visit_id: int
+    match_id: int

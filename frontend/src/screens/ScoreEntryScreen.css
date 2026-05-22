@@ -1,0 +1,618 @@
+/* ============================================================
+   Score Entry Screen
+   ============================================================ */
+
+.score-screen {
+  min-height: 100vh;
+  background: #0d0d1a;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---- Loading / error ---- */
+
+.score-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.5rem;
+  color: #aaa;
+  background: #0d0d1a;
+}
+
+.score-error-page {
+  color: #ff6b6b;
+}
+
+/* ---- Header ---- */
+
+.score-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.25rem;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a4a;
+  flex-shrink: 0;
+}
+
+.score-round-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e0e0ff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.score-single-out-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.score-single-out-badge--active {
+  background: #ff9800;
+  color: #000;
+  text-transform: uppercase;
+}
+
+.score-single-out-badge--countdown {
+  background: #2a2a4a;
+  color: #9b9bc8;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Per-player Single-Out badge (in player rows) ---- */
+
+.score-so-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #484870;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.score-so-badge--active {
+  color: #ff9800;
+}
+
+/* ---- Score panels ---- */
+
+.score-panels {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.score-vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #555;
+  padding: 0 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ---- Team block ---- */
+
+.score-team {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 1rem 0.5rem;
+  background: #14142a;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.score-team--active {
+  background: #1a2035;
+  border-bottom-color: #4fc3f7;
+}
+
+/* ---- Player rows inside a team ---- */
+
+.score-team-players {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.4rem;
+}
+
+.score-player-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.1rem 0;
+  cursor: default;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.score-player-row[role='button'] {
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+}
+
+.score-player-row[role='button']:hover {
+  background: #2a2a4a;
+}
+
+.score-player-row--active .score-player-name {
+  color: #4fc3f7;
+}
+
+.score-active-arrow {
+  color: #4fc3f7;
+  font-weight: 900;
+  font-size: 1rem;
+  width: 0.9rem;
+  flex-shrink: 0;
+}
+
+.score-player-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e0ff;
+  flex: 1 1 auto;
+}
+
+.score-player-avg {
+  font-size: 0.85rem;
+  color: #9b9bc8;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ---- Remaining score ---- */
+
+.score-remaining {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.score-team--active .score-remaining {
+  color: #4fc3f7;
+}
+
+.score-remaining--bust {
+  color: #ff5252 !important;
+  animation: bust-flash 0.4s ease-in-out 3;
+}
+
+@keyframes bust-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.score-last-visit {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #9b9bc8;
+}
+
+/* ---- Checkout suggestion (inside team block) ---- */
+
+.score-checkout {
+  margin-top: 0.3rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #a5d6a7;
+  letter-spacing: 0.05em;
+}
+
+/* ---- Doubles hint ---- */
+
+.score-doubles-hint {
+  text-align: center;
+  color: #9b9bc8;
+  font-size: 0.9rem;
+  padding: 0.3rem 1rem;
+  margin: 0;
+  flex-shrink: 0;
+  background: #111120;
+  border-top: 1px solid #2a2a4a;
+}
+
+/* ---- Inline error ---- */
+
+.score-inline-error {
+  text-align: center;
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  padding: 0.25rem 1rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* ---- Dart Field Selector ---- */
+
+.dart-selector {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  background: #111120;
+  border-top: 1px solid #2a2a4a;
+  overflow: hidden;
+}
+
+/* Dart slots row */
+
+.dart-slots {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #0d0d1a;
+  border-bottom: 1px solid #2a2a4a;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.dart-slot {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.3rem;
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  font-size: 0.75rem;
+  min-height: 3.8rem;
+  touch-action: manipulation;
+}
+
+.dart-slot:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dart-slot--active {
+  border-color: #4fc3f7;
+  background: #1a2a3a;
+}
+
+.dart-slot--filled {
+  border-color: #555;
+}
+
+.dart-slot--active.dart-slot--filled {
+  border-color: #4fc3f7;
+}
+
+.dart-slot-number {
+  font-size: 0.65rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dart-slot-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #e0e0ff;
+  line-height: 1.1;
+}
+
+.dart-slot--active .dart-slot-value {
+  color: #4fc3f7;
+}
+
+.dart-slot-pts {
+  font-size: 0.7rem;
+  color: #9b9bc8;
+  font-variant-numeric: tabular-nums;
+}
+
+/* DEL + CONFIRM buttons */
+
+.dart-slots-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.dart-btn {
+  padding: 0.4rem 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.1s;
+  flex: 1 1 0;
+  min-width: 5rem;
+}
+
+.dart-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dart-btn--del {
+  background: #3a2a1a;
+  color: #ff9800;
+}
+
+.dart-btn--del:hover:not(:disabled) {
+  background: #5a3a1a;
+}
+
+.dart-btn--confirm {
+  background: #1a4a2a;
+  color: #66bb6a;
+  font-size: 1.4rem;
+}
+
+.dart-btn--confirm:hover:not(:disabled) {
+  background: #1a6a2a;
+}
+
+/* Field grid */
+
+.dart-field-grid {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem 0.5rem;
+  overflow-y: auto;
+}
+
+.dart-field-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+}
+
+.dart-field-btn {
+  flex: 1 1 0;
+  min-width: 2.2rem;
+  height: 2.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.08s,
+    transform 0.05s;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dart-field-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.dart-field-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Singles row — neutral grey */
+.dart-field-row--singles .dart-field-btn {
+  background: #2a2a42;
+  color: #e0e0ff;
+}
+
+.dart-field-row--singles .dart-field-btn:hover:not(:disabled) {
+  background: #3a3a5a;
+}
+
+/* Doubles row — green tint */
+.dart-field-row--doubles .dart-field-btn {
+  background: #1a3a2a;
+  color: #a5d6a7;
+}
+
+.dart-field-row--doubles .dart-field-btn:hover:not(:disabled) {
+  background: #1a5a3a;
+}
+
+/* Triples row — blue tint */
+.dart-field-row--triples .dart-field-btn {
+  background: #1a2a4a;
+  color: #90caf9;
+}
+
+.dart-field-row--triples .dart-field-btn:hover:not(:disabled) {
+  background: #1a3a6a;
+}
+
+/* Spacer — keeps triple row aligned with single/double rows (no triple bull) */
+.dart-field-btn--spacer {
+  visibility: hidden;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* ---- General button ---- */
+
+.score-btn {
+  padding: 0.9rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.score-btn--primary {
+  background: #4fc3f7;
+  color: #000;
+}
+
+.score-btn--primary:hover {
+  background: #81d4fa;
+}
+
+/* ---- Overlays ---- */
+
+.score-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.score-overlay--bust {
+  background: rgba(255, 30, 30, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.score-overlay--finished {
+  background: rgba(0, 0, 30, 0.88);
+  backdrop-filter: blur(6px);
+}
+
+.score-overlay-content {
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  border-radius: 16px;
+  padding: 2.5rem 3rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 480px;
+  width: 90%;
+}
+
+.score-overlay--bust .score-overlay-content {
+  border-color: #ff5252;
+}
+
+.score-overlay-title {
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.score-overlay--bust .score-overlay-title {
+  color: #ff5252;
+}
+
+.score-overlay--finished .score-overlay-title {
+  color: #4fc3f7;
+}
+
+.score-overlay-sub {
+  font-size: 1rem;
+  color: #aaa;
+}
+
+.score-overlay-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.score-overlay-winner-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.score-overlay-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #9b9bc8;
+  font-size: 0.95rem;
+}
+
+.score-btn--undo {
+  background: #2a1a1a;
+  color: #ff9800;
+  border: 1px solid #5a3a1a;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.5rem;
+}
+
+.score-btn--undo:hover:not(:disabled) {
+  background: #3a2a1a;
+}
+
+.score-btn--undo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- Undo bar ---- */
+
+.score-undo-bar {
+  background: #0d0d1a;
+  border-top: 1px solid #2a2a4a;
+  flex-shrink: 0;
+  padding: 0.4rem 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.score-undo-btn {
+  background: #2a1a1a;
+  color: #ff9800;
+  border: 1px solid #5a3a1a;
+  border-radius: 6px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.1s;
+}
+
+.score-undo-btn:hover:not(:disabled) {
+  background: #3a2a1a;
+}
+
+.score-undo-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

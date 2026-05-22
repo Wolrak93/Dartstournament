@@ -120,3 +120,73 @@ export interface LightningMatchRead {
 export interface LightningResponse {
   matches: LightningMatchRead[]
 }
+
+// ---------------------------------------------------------------------------
+// Score entry (visits)
+// ---------------------------------------------------------------------------
+
+export interface VisitRequest {
+  player_id: number
+  dart1: number
+  dart2: number
+  dart3: number
+  bounce_flags: boolean[]
+  robin_hood_flags: boolean[]
+  dart_bands: string[]
+}
+
+export interface SpecialEventItem {
+  event_type: string
+  bonus_value: number
+  count: number
+}
+
+export interface VisitResponse {
+  visit_id: number
+  player_id: number
+  visit_number: number
+  total: number
+  is_bust: boolean
+  remaining_after: number
+  match_finished: boolean
+  winner_id: number | null
+  special_events: SpecialEventItem[]
+}
+
+export interface CheckoutSuggestion {
+  darts: string[]
+  is_finish: boolean
+  leave: number
+}
+
+export interface VisitHistoryItem {
+  visit_id: number
+  player_id: number
+  visit_number: number
+  dart1: number
+  dart2: number
+  dart3: number
+  total: number
+  is_bust: boolean
+}
+
+export interface MatchStateResponse {
+  match_id: number
+  status: MatchStatus
+  round_type: RoundType
+  starting_player_id: number | null
+  current_player_id: number | null
+  remaining_p1: number
+  remaining_p2: number
+  visit_count_p1: number
+  visit_count_p2: number
+  visit_count_p3: number | null
+  visit_count_p4: number | null
+  avg_p1: number
+  avg_p2: number
+  avg_p3: number | null
+  avg_p4: number | null
+  last_visit_total: number | null
+  single_out_mode: boolean
+  checkout_suggestion: CheckoutSuggestion | null
+}
