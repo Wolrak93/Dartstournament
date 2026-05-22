@@ -4,7 +4,6 @@ import { useWebSocket } from '../hooks/useWebSocket'
 import { getKOBracket, getPlayers } from '../api/client'
 import type { KOBracketResponse, KOMatchupRead, Player } from '../api/types'
 import NavBar from '../components/NavBar'
-import NextMatchesPanel from '../components/NextMatchesPanel'
 import './overview.css'
 import './BracketScreen.css'
 
@@ -163,11 +162,6 @@ export default function BracketScreen() {
             </div>
           )}
         </section>
-        <NextMatchesPanel
-          tournamentId={tournamentId}
-          playerMap={playerMap}
-          lastWsEvent={lastEvent}
-        />
       </div>
     </div>
   )

@@ -216,7 +216,11 @@ def test_get_next_matches(client):
     assert response.status_code == 200
     next_matches = response.json()
     assert len(next_matches) > 0
-    # All should be pending and from the lowest round
-    assert all(m["status"] == "pending" for m in next_matches)
+    # Fixed draw: returns all active (pending/bull_throw/in_progress) matches across all rounds
+    active_statuses = {"pending", "bull_throw", "in_progress"}
+    assert all(m["status"] in active_statuses for m in next_matches)
+    # Ordered by round_number ascending
     round_numbers = [m["round_number"] for m in next_matches]
-    assert all(r == round_numbers[0] for r in round_numbers)
+    assert round_numbers == sorted(round_numbers)
+    # Fixed draw with 9 players generates multiple rounds (at least 2)
+    assert len(set(round_numbers)) > 1

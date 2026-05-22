@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { getNextMatches } from '../api/client'
+import { getNextMatches, playerPhotoUrl } from '../api/client'
 import type { MatchRead, Player } from '../api/types'
 import type { WsEvent } from '../hooks/useWebSocket'
 import './NextMatchesPanel.css'
@@ -21,17 +21,76 @@ function matchLink(match: MatchRead): string {
   return match.status === 'in_progress' ? `/score/${match.id}` : `/bull-throw/${match.id}`
 }
 
-function playerName(id: number, map: Record<number, Player>): string {
-  return map[id]?.name ?? `#${id}`
+interface PlayerSlotProps {
+  id: number
+  playerMap: Record<number, Player>
 }
 
-function matchLabel(match: MatchRead, map: Record<number, Player>): string {
-  const p3 = match.player3_id !== null ? playerName(match.player3_id, map) : null
-  const p4 = match.player4_id !== null ? playerName(match.player4_id, map) : null
-  if (p3 !== null && p4 !== null) {
-    return `${playerName(match.player1_id, map)} & ${p3} vs ${playerName(match.player2_id, map)} & ${p4}`
-  }
-  return `${playerName(match.player1_id, map)} vs ${playerName(match.player2_id, map)}`
+function PlayerSlot({ id, playerMap }: PlayerSlotProps) {
+  const player = playerMap[id]
+  return (
+    <div className="nm-player">
+      {player?.photo_path != null ? (
+        <img
+          src={playerPhotoUrl(player.photo_path)}
+          alt={player.name}
+          className="nm-photo"
+        />
+      ) : (
+        <div className="nm-photo nm-photo--placeholder">
+          {player?.name?.[0]?.toUpperCase() ?? '?'}
+        </div>
+      )}
+      <span className="nm-player-name">{player?.name ?? `#${id}`}</span>
+    </div>
+  )
+}
+
+interface MatchCardProps {
+  match: MatchRead
+  playerMap: Record<number, Player>
+}
+
+function MatchCard({ match, playerMap }: MatchCardProps) {
+  const isDoubles = match.player3_id !== null && match.player4_id !== null
+  const isActive = match.status === 'in_progress'
+
+  return (
+    <div className={`nm-card${isActive ? ' nm-card--active' : ''}`}>
+      <div className="nm-card-header">
+        <span className="nm-round-label">
+          {ROUND_LABELS[match.round_type] ?? match.round_type} · Runde {match.round_number}
+        </span>
+      </div>
+
+      <div className="nm-matchup">
+        <div className="nm-team">
+          <PlayerSlot id={match.player1_id} playerMap={playerMap} />
+          {isDoubles && match.player3_id !== null && (
+            <PlayerSlot id={match.player3_id} playerMap={playerMap} />
+          )}
+        </div>
+
+        <div className="nm-vs">VS</div>
+
+        <div className="nm-team">
+          <PlayerSlot id={match.player2_id} playerMap={playerMap} />
+          {isDoubles && match.player4_id !== null && (
+            <PlayerSlot id={match.player4_id} playerMap={playerMap} />
+          )}
+        </div>
+      </div>
+
+      <div className="nm-card-footer">
+        <Link
+          to={matchLink(match)}
+          className={`nm-start-btn${isActive ? ' nm-start-btn--active' : ''}`}
+        >
+          {isActive ? 'Fortsetzen' : 'Starten'}
+        </Link>
+      </div>
+    </div>
+  )
 }
 
 export default function NextMatchesPanel({
@@ -61,27 +120,25 @@ export default function NextMatchesPanel({
     }
   }, [lastWsEvent, loadMatches])
 
-  if (matches.length === 0) return null
+  if (matches.length === 0) {
+    return (
+      <div className="nm-panel">
+        <h2 className="nm-title">Nächste Matches</h2>
+        <p className="nm-empty">Keine ausstehenden Matches.</p>
+      </div>
+    )
+  }
 
   return (
-    <aside className="next-matches-panel">
-      <h2 className="next-matches-title">Nächste Matches</h2>
-      <ul className="next-matches-list">
+    <div className="nm-panel">
+      <h2 className="nm-title">Nächste Matches</h2>
+      <ul className="nm-list">
         {matches.map(match => (
-          <li key={match.id} className="next-match-item">
-            <span className="next-match-round">
-              {ROUND_LABELS[match.round_type] ?? match.round_type} R{match.round_number}
-            </span>
-            <span className="next-match-players">{matchLabel(match, playerMap)}</span>
-            <Link
-              to={matchLink(match)}
-              className={`next-match-btn${match.status === 'in_progress' ? ' next-match-btn--active' : ''}`}
-            >
-              {match.status === 'in_progress' ? 'Fortsetzen' : 'Starten'}
-            </Link>
+          <li key={match.id}>
+            <MatchCard match={match} playerMap={playerMap} />
           </li>
         ))}
       </ul>
-    </aside>
+    </div>
   )
 }

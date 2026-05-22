@@ -6,6 +6,7 @@ import SetupScreen from './screens/SetupScreen'
 import StandingsScreen from './screens/StandingsScreen'
 import BracketScreen from './screens/BracketScreen'
 import LightningScreen from './screens/LightningScreen'
+import NextMatchesScreen from './screens/NextMatchesScreen'
 
 const router = createBrowserRouter([
   { path: '/', element: <SetupScreen /> },
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
   { path: '/score/:matchId', element: <ScoreEntryScreen /> },
   { path: '/walkon/:matchId', element: <div>Walk-on (Task 19)</div> },
   { path: '/standings', element: <StandingsScreen /> },
+  { path: '/next-matches', element: <NextMatchesScreen /> },
   { path: '/bracket', element: <BracketScreen /> },
   { path: '/lightning', element: <LightningScreen /> },
 ])

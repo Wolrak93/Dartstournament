@@ -1,18 +1,21 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTournament } from '../contexts/TournamentContext'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { getStandings, getPlayers } from '../api/client'
+import { getStandings, getPlayers, triggerNextRound, getNextMatches } from '../api/client'
 import type { StandingEntry, Player } from '../api/types'
 import NavBar from '../components/NavBar'
-import NextMatchesPanel from '../components/NextMatchesPanel'
 import './overview.css'
 import './StandingsScreen.css'
 
 export default function StandingsScreen() {
   const { tournamentId } = useTournament()
+  const navigate = useNavigate()
   const [standings, setStandings] = useState<StandingEntry[]>([])
   const [playerMap, setPlayerMap] = useState<Record<number, Player>>({})
   const [error, setError] = useState<string | null>(null)
+  const [nextRoundLoading, setNextRoundLoading] = useState(false)
+  const [hasPendingMatches, setHasPendingMatches] = useState(true)
 
   useEffect(() => {
     getPlayers()
@@ -26,6 +29,13 @@ export default function StandingsScreen() {
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Fehler beim Laden'))
   }, [])
 
+  const loadPendingMatches = useCallback(() => {
+    if (tournamentId === null) return
+    getNextMatches(tournamentId)
+      .then(matches => setHasPendingMatches(matches.length > 0))
+      .catch(() => setHasPendingMatches(false))
+  }, [tournamentId])
+
   const loadStandings = useCallback(() => {
     if (tournamentId === null) return
     getStandings(tournamentId)
@@ -37,15 +47,31 @@ export default function StandingsScreen() {
 
   useEffect(() => {
     loadStandings()
-  }, [loadStandings])
+    loadPendingMatches()
+  }, [loadStandings, loadPendingMatches])
 
   const { lastEvent } = useWebSocket('tournament', tournamentId ?? 0)
 
   useEffect(() => {
     if (lastEvent?.type === 'standings_update') {
       loadStandings()
+      loadPendingMatches()
     }
-  }, [lastEvent, loadStandings])
+  }, [lastEvent, loadStandings, loadPendingMatches])
+
+  const handleNextRound = useCallback(() => {
+    if (tournamentId === null) return
+    setNextRoundLoading(true)
+    setError(null)
+    triggerNextRound(tournamentId)
+      .then(() => {
+        navigate('/next-matches')
+      })
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : 'Fehler beim Erstellen der nächsten Runde'),
+      )
+      .finally(() => setNextRoundLoading(false))
+  }, [tournamentId, navigate])
 
   if (tournamentId === null) {
     return (
@@ -88,7 +114,7 @@ export default function StandingsScreen() {
                     <td className="standings-name">
                       {playerMap[entry.player_id]?.name ?? `Spieler ${entry.player_id}`}
                     </td>
-                    <td>{entry.reg_points.toFixed(2)}</td>
+                    <td>{entry.total_points.toFixed(4)}</td>
                     <td>{entry.bonus_points}</td>
                     <td>{entry.avg_score.toFixed(2)}</td>
                   </tr>
@@ -102,12 +128,18 @@ export default function StandingsScreen() {
               <span className="legend-wildcard">■ Platz 7–8: Wildcard</span>
             </div>
           )}
+          {!hasPendingMatches && (
+            <div className="standings-actions">
+              <button
+                className="btn-next-round"
+                onClick={handleNextRound}
+                disabled={nextRoundLoading}
+              >
+                {nextRoundLoading ? 'Wird geladen…' : 'Nächste Runde starten'}
+              </button>
+            </div>
+          )}
         </section>
-        <NextMatchesPanel
-          tournamentId={tournamentId}
-          playerMap={playerMap}
-          lastWsEvent={lastEvent}
-        />
       </div>
     </div>
   )

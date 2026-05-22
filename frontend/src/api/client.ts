@@ -10,6 +10,7 @@ import type {
   LightningResponse,
   VisitRequest,
   VisitResponse,
+  VisitHistoryItem,
   MatchStateResponse,
 } from './types'
 
@@ -29,6 +30,15 @@ export const playerPhotoUrl = (photoPath: string): string =>
 
 async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`)
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }))
+    throw new Error((err as { detail?: string }).detail ?? response.statusText)
+  }
+  return response.json() as Promise<T>
+}
+
+async function apiDelete<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, { method: 'DELETE' })
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: response.statusText }))
     throw new Error((err as { detail?: string }).detail ?? response.statusText)
@@ -92,5 +102,14 @@ export const getLightning = (tournamentId: number): Promise<LightningResponse> =
 export const getMatchState = (matchId: number): Promise<MatchStateResponse> =>
   apiGet<MatchStateResponse>(`/matches/${matchId}/state`)
 
+export const triggerNextRound = (tournamentId: number): Promise<MatchRead[]> =>
+  apiPost<MatchRead[]>(`/tournaments/${tournamentId}/next-round`)
+
 export const recordVisit = (matchId: number, body: VisitRequest): Promise<VisitResponse> =>
   apiPost<VisitResponse, VisitRequest>(`/matches/${matchId}/visits`, body)
+
+export const getMatchVisits = (matchId: number): Promise<VisitHistoryItem[]> =>
+  apiGet<VisitHistoryItem[]>(`/matches/${matchId}/visits`)
+
+export const undoLastVisit = (matchId: number): Promise<{ undone_visit_id: number; match_id: number }> =>
+  apiDelete(`/matches/${matchId}/visits/last`)

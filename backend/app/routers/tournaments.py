@@ -278,6 +278,170 @@ async def start_tournament(
     return [MatchRead.model_validate(m) for m in created_matches]
 
 
+@router.post("/{tournament_id}/next-round", response_model=list[MatchRead], status_code=201)
+async def start_next_swiss_round(
+    tournament_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> list[MatchRead]:
+    tournament = await _get_tournament_or_404(db, tournament_id)
+
+    if tournament.status != TournamentStatus.vorrunde:
+        raise conflict(
+            "Next round can only be triggered during the Vorrunde.",
+            "invalid_tournament_status",
+        )
+    if tournament.mode != TournamentMode.swiss:
+        raise conflict(
+            "Next round generation is only available in Swiss mode.",
+            "not_swiss_mode",
+        )
+
+    all_matches = await list_matches_by_tournament(db, tournament_id)
+    vorrunde_matches = [m for m in all_matches if m.round_type == RoundType.vorrunde]
+
+    if not vorrunde_matches:
+        raise conflict(
+            "No Vorrunde matches found. Start the tournament first.",
+            "no_matches",
+        )
+
+    current_round = max(m.round_number for m in vorrunde_matches)
+    current_round_matches = [m for m in vorrunde_matches if m.round_number == current_round]
+    unfinished = [m for m in current_round_matches if m.status != MatchStatus.finished]
+    if unfinished:
+        raise conflict(
+            f"Round {current_round} is not finished yet "
+            f"({len(unfinished)} match(es) still pending).",
+            "round_not_finished",
+        )
+
+    # Reconstruct SwissState from DB
+    tp_rows = await list_tournament_players(db, tournament_id)
+    player_ids = [tp.player_id for tp in tp_rows]
+
+    standings: dict[int, PlayerStanding] = {}
+    for tp in tp_rows:
+        standings[tp.player_id] = PlayerStanding(
+            player_id=tp.player_id,
+            reg_points=tp.reg_points,
+            bonus_points=tp.bonus_points,
+            total_score=round(tp.avg_score * 100),
+            total_visits=100 if tp.avg_score > 0 else 0,
+        )
+
+    played_pairs: set[frozenset[int]] = set()
+    for m in vorrunde_matches:
+        if m.player3_id is None:
+            # Singles
+            played_pairs.add(frozenset({m.player1_id, m.player2_id}))
+        else:
+            # Doubles: cross-pairs
+            for a in [m.player1_id, m.player3_id]:
+                for b in [m.player2_id, m.player4_id]:
+                    if b is not None:
+                        played_pairs.add(frozenset({a, b}))
+
+    # Reconstruct bye_counts: for each round, any player without a match got a bye
+    rounds_seen = sorted({m.round_number for m in vorrunde_matches})
+    bye_counts: dict[int, int] = {pid: 0 for pid in player_ids}
+    for rnd in rounds_seen:
+        players_in_round: set[int] = set()
+        for m in vorrunde_matches:
+            if m.round_number == rnd:
+                players_in_round.add(m.player1_id)
+                players_in_round.add(m.player2_id)
+                if m.player3_id is not None:
+                    players_in_round.add(m.player3_id)
+                if m.player4_id is not None:
+                    players_in_round.add(m.player4_id)
+        for pid in player_ids:
+            if pid not in players_in_round:
+                bye_counts[pid] += 1
+
+    # Reconstruct partner_history for doubles: same-team players are partners
+    # team1 = (player1_id, player3_id), team2 = (player2_id, player4_id)
+    partner_history: dict[int, set[int]] = {pid: set() for pid in player_ids}
+    for m in vorrunde_matches:
+        if m.player3_id is not None:
+            partner_history[m.player1_id].add(m.player3_id)
+            partner_history[m.player3_id].add(m.player1_id)
+        if m.player4_id is not None:
+            partner_history[m.player2_id].add(m.player4_id)
+            partner_history[m.player4_id].add(m.player2_id)
+
+    state = SwissState(player_ids=player_ids)
+    state.standings = standings
+    state.played_pairs = played_pairs
+    state.current_round = current_round
+    state.bye_counts = bye_counts
+    state.partner_history = partner_history
+
+    doubles = is_doubles_mode(len(player_ids))
+    base_score = VORRUNDE_BASE_SCORE
+
+    pairings = generate_swiss_round(state)
+
+    champ_counts: dict[int, int] = {}
+    for pid in player_ids:
+        p = await get_player_by_id(db, pid)
+        champ_counts[pid] = p.championship_count if p else 0
+
+    created_matches = []
+    for pairing in pairings:
+        if doubles:
+            p1, p3 = pairing.team1[0], pairing.team1[1]
+            p2, p4 = pairing.team2[0], pairing.team2[1]
+            result = compute_doubles_handicap(
+                champ_counts.get(p1, 0),
+                champ_counts.get(p3, 0),
+                champ_counts.get(p2, 0),
+                champ_counts.get(p4, 0),
+                base_score,
+            )
+            match = await create_match(
+                db,
+                tournament_id=tournament_id,
+                round_type=RoundType.vorrunde,
+                round_number=pairing.round_number,
+                player1_id=p1,
+                player2_id=p2,
+                player3_id=p3,
+                player4_id=p4,
+                starting_score_p1=result.starting_score_a,
+                starting_score_p2=result.starting_score_b,
+            )
+        else:
+            p1 = pairing.team1[0]
+            p2 = pairing.team2[0]
+            result = compute_singles_handicap(
+                champ_counts.get(p1, 0),
+                champ_counts.get(p2, 0),
+                base_score,
+            )
+            match = await create_match(
+                db,
+                tournament_id=tournament_id,
+                round_type=RoundType.vorrunde,
+                round_number=pairing.round_number,
+                player1_id=p1,
+                player2_id=p2,
+                starting_score_p1=result.starting_score_a,
+                starting_score_p2=result.starting_score_b,
+            )
+        created_matches.append(match)
+
+    await db.commit()
+
+    await manager.broadcast_tournament(
+        tournament_id,
+        {"type": "standings_update", "data": {"tournament_id": tournament_id}},
+    )
+
+    for m in created_matches:
+        await db.refresh(m)
+    return [MatchRead.model_validate(m) for m in created_matches]
+
+
 @router.get("/{tournament_id}/standings", response_model=list[StandingEntry])
 async def get_standings(
     tournament_id: int,
@@ -331,14 +495,22 @@ async def get_next_matches(
     tournament_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> list[MatchRead]:
-    await _get_tournament_or_404(db, tournament_id)
+    tournament = await _get_tournament_or_404(db, tournament_id)
     all_matches = await list_matches_by_tournament(db, tournament_id)
-    pending = [m for m in all_matches if m.status == MatchStatus.pending]
-    # Return the first pending match(es) from the lowest round number
-    if not pending:
+
+    active_statuses = {MatchStatus.pending, MatchStatus.bull_throw, MatchStatus.in_progress}
+    active = [m for m in all_matches if m.status in active_statuses]
+
+    if not active:
         return []
-    min_round = min(m.round_number for m in pending)
-    return [MatchRead.model_validate(m) for m in pending if m.round_number == min_round]
+
+    if tournament.mode == TournamentMode.fixed:
+        # Fixed draw: all rounds pre-generated upfront — show the full remaining schedule.
+        return [MatchRead.model_validate(m) for m in active]
+
+    # Swiss: only one round is generated at a time; show current round only.
+    min_round = min(m.round_number for m in active)
+    return [MatchRead.model_validate(m) for m in active if m.round_number == min_round]
 
 
 @router.post(

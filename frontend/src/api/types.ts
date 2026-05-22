@@ -132,6 +132,7 @@ export interface VisitRequest {
   dart3: number
   bounce_flags: boolean[]
   robin_hood_flags: boolean[]
+  dart_bands: string[]
 }
 
 export interface SpecialEventItem {
@@ -156,6 +157,17 @@ export interface CheckoutSuggestion {
   darts: string[]
   is_finish: boolean
   leave: number
+}
+
+export interface VisitHistoryItem {
+  visit_id: number
+  player_id: number
+  visit_number: number
+  dart1: number
+  dart2: number
+  dart3: number
+  total: number
+  is_bust: boolean
 }
 
 export interface MatchStateResponse {

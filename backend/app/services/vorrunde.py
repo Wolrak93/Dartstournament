@@ -322,12 +322,18 @@ class SwissState:
     standings: dict[int, PlayerStanding] = field(default_factory=dict)
     played_pairs: set[frozenset[int]] = field(default_factory=set)
     current_round: int = 0
+    bye_counts: dict[int, int] = field(default_factory=dict)
+    partner_history: dict[int, set[int]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.standings:
             self.standings = {
                 pid: PlayerStanding(player_id=pid) for pid in self.player_ids
             }
+        if not self.bye_counts:
+            self.bye_counts = {pid: 0 for pid in self.player_ids}
+        if not self.partner_history:
+            self.partner_history = {pid: set() for pid in self.player_ids}
 
     def _pair_key(self, a: int, b: int) -> frozenset[int]:
         return frozenset({a, b})
@@ -344,9 +350,12 @@ def _swiss_pair_singles(
 ) -> list[MatchPairing]:
     """Pair players for one Swiss round in singles mode.
 
-    Players are sorted by current points (desc).  We use a greedy approach:
-    iterate top-down and match the first available opponent who has not yet
-    been met.  An unmatched player receives a bye (not added to pairings).
+    When the player count is odd, the bye player is chosen proactively
+    (before greedy pairing) to ensure fair bye rotation:
+    - Primary:   fewest prior byes (so the same player is not skipped twice)
+    - Secondary: lowest current ranking (weakest player sits out)
+
+    The remaining even-sized pool is then paired greedily top-down.
     """
     sorted_players = sorted(
         state.player_ids,
@@ -357,6 +366,19 @@ def _swiss_pair_singles(
     round_num = state.current_round  # already incremented by caller
     pairings: list[MatchPairing] = []
     used: set[int] = set()
+
+    # With an odd number of players, proactively pick the bye player so
+    # that the player who has already had the most byes is never chosen.
+    if len(sorted_players) % 2 == 1:
+        bye_player = min(
+            sorted_players,
+            key=lambda pid: (
+                state.bye_counts.get(pid, 0),   # fewest byes = most eligible for bye
+                state.standings[pid].sort_key,   # tiebreak: lowest ranked sits out
+            ),
+        )
+        used.add(bye_player)
+        state.bye_counts[bye_player] = state.bye_counts.get(bye_player, 0) + 1
 
     for pid in sorted_players:
         if pid in used:
@@ -376,11 +398,58 @@ def _swiss_pair_singles(
     return pairings
 
 
+def _find_partner_pairs(
+    players: list[int],
+    partner_history: dict[int, set[int]],
+) -> list[list[int]] | None:
+    """Find a perfect partner matching with no repeat partnerships.
+
+    Uses backtracking so it finds a valid solution whenever one exists,
+    unlike a greedy approach that can reach dead-ends.
+
+    Args:
+        players:        Even-sized list of player IDs to be paired up.
+        partner_history: Current partnership history (player → set of prior partners).
+
+    Returns:
+        List of [a, b] pairs forming a perfect matching, or None when no
+        repeat-free matching is possible.
+    """
+    if not players:
+        return []
+    first = players[0]
+    for i in range(1, len(players)):
+        candidate = players[i]
+        if candidate not in partner_history.get(first, set()):
+            remaining = [players[j] for j in range(1, len(players)) if j != i]
+            sub = _find_partner_pairs(remaining, partner_history)
+            if sub is not None:
+                return [[first, candidate]] + sub
+    return None
+
+
 def _swiss_pair_doubles(state: SwissState) -> list[MatchPairing]:
     """Pair players for one Swiss round in doubles mode.
 
-    Sort by points, randomly assign partners within each half of the
-    standings (top half vs bottom half), avoiding repeat partnerships.
+    Three-step algorithm:
+
+    Step 1 — Bye selection (only when n % 4 != 0, i.e. 10 players):
+        Pick the n % 4 players with the fewest prior byes.  Tiebreak:
+        lowest-ranked player sits out (weakest player is most eligible).
+        Updates state.bye_counts for the chosen players.
+
+    Step 2 — Partner assignment (no repeat partners):
+        Uses backtracking to find a perfect matching where no two players
+        who have previously been partners are paired again.  Updates
+        state.partner_history.  Falls back to consecutive pairing only if
+        all valid pairings are truly exhausted (shouldn't happen in practice
+        with 10–12 players and ≤ 6 rounds).
+
+    Step 3 — Opponent matching by team strength:
+        Compute each team's combined strength (sum of individual sort_key
+        primary values = reg_points + avg_bonus).  Sort teams descending and
+        pair adjacent teams so the strongest team faces the 2nd strongest,
+        3rd vs 4th, etc.
     """
     sorted_players = sorted(
         state.player_ids,
@@ -390,29 +459,60 @@ def _swiss_pair_doubles(state: SwissState) -> list[MatchPairing]:
 
     round_num = state.current_round  # already incremented by caller
     n = len(sorted_players)
-    half = n // 2
+    num_byes = n % 4  # 0 for 12 players, 2 for 10 players
 
-    # Split into top half and bottom half
-    top = list(sorted_players[:half])
-    bottom = list(sorted_players[half:])
+    active = list(sorted_players)
 
-    random.shuffle(top)
-    random.shuffle(bottom)
+    # ------------------------------------------------------------------
+    # Step 1: assign byes
+    # ------------------------------------------------------------------
+    if num_byes > 0:
+        # Sort ascending: fewest byes first; tiebreak: lowest sort_key (weakest)
+        bye_candidates = sorted(
+            sorted_players,
+            key=lambda pid: (
+                state.bye_counts[pid],
+                state.standings[pid].sort_key,
+            ),
+        )
+        for pid in bye_candidates[:num_byes]:
+            state.bye_counts[pid] += 1
+            active.remove(pid)
+
+    # ------------------------------------------------------------------
+    # Step 2: find valid partner pairs via backtracking
+    # Shuffle first so partners are assigned randomly, not by rank order.
+    # Step 3 still ensures teams of similar strength face each other.
+    # ------------------------------------------------------------------
+    random.shuffle(active)
+    partner_pairs = _find_partner_pairs(active, state.partner_history)
+    if partner_pairs is None:
+        # All valid pairings exhausted — pair consecutively as a last resort
+        partner_pairs = [
+            [active[i], active[i + 1]] for i in range(0, len(active) - 1, 2)
+        ]
+
+    for a, b in partner_pairs:
+        state.partner_history[a].add(b)
+        state.partner_history[b].add(a)
+
+    # ------------------------------------------------------------------
+    # Step 3: sort teams by combined strength, pair adjacent
+    # ------------------------------------------------------------------
+    def _team_strength(pair: list[int]) -> float:
+        return sum(state.standings[pid].sort_key[0] for pid in pair)
+
+    teams = sorted(partner_pairs, key=_team_strength, reverse=True)
 
     pairings: list[MatchPairing] = []
-    # Form doubles matches: top[i] + top[i+1] vs bottom[i] + bottom[i+1]
-    i = 0
-    while i + 1 < min(len(top), len(bottom)):
-        p1a, p2a = top[i], top[i + 1]
-        p1b, p2b = bottom[i], bottom[i + 1]
+    for i in range(0, len(teams) - 1, 2):
         pairings.append(
             MatchPairing(
                 round_number=round_num,
-                team1=[p1a, p2a],
-                team2=[p1b, p2b],
+                team1=teams[i],
+                team2=teams[i + 1],
             )
         )
-        i += 2
 
     return pairings
 

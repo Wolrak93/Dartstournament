@@ -51,14 +51,39 @@
 }
 
 .score-single-out-badge {
-  background: #ff9800;
-  color: #000;
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.2rem 0.6rem;
   border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.score-single-out-badge--active {
+  background: #ff9800;
+  color: #000;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+}
+
+.score-single-out-badge--countdown {
+  background: #2a2a4a;
+  color: #9b9bc8;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Per-player Single-Out badge (in player rows) ---- */
+
+.score-so-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #484870;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.score-so-badge--active {
+  color: #ff9800;
 }
 
 /* ---- Score panels ---- */
@@ -195,7 +220,7 @@
 
 .score-checkout {
   margin-top: 0.3rem;
-  font-size: 1.1rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #a5d6a7;
   letter-spacing: 0.05em;
@@ -432,6 +457,13 @@
   background: #1a3a6a;
 }
 
+/* Spacer — keeps triple row aligned with single/double rows (no triple bull) */
+.dart-field-btn--spacer {
+  visibility: hidden;
+  pointer-events: none;
+  cursor: default;
+}
+
 /* ---- General button ---- */
 
 .score-btn {
@@ -497,6 +529,8 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  line-height: 1.15;
+  word-break: break-word;
 }
 
 .score-overlay--bust .score-overlay-title {
@@ -531,4 +565,54 @@
   gap: 0.25rem;
   color: #9b9bc8;
   font-size: 0.95rem;
+}
+
+.score-btn--undo {
+  background: #2a1a1a;
+  color: #ff9800;
+  border: 1px solid #5a3a1a;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.5rem;
+}
+
+.score-btn--undo:hover:not(:disabled) {
+  background: #3a2a1a;
+}
+
+.score-btn--undo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- Undo bar ---- */
+
+.score-undo-bar {
+  background: #0d0d1a;
+  border-top: 1px solid #2a2a4a;
+  flex-shrink: 0;
+  padding: 0.4rem 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.score-undo-btn {
+  background: #2a1a1a;
+  color: #ff9800;
+  border: 1px solid #5a3a1a;
+  border-radius: 6px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.1s;
+}
+
+.score-undo-btn:hover:not(:disabled) {
+  background: #3a2a1a;
+}
+
+.score-undo-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

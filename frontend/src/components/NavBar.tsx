@@ -8,7 +8,13 @@ export default function NavBar() {
         to="/standings"
         className={({ isActive }) => `nav-link${isActive ? ' nav-link--active' : ''}`}
       >
-        Standings
+        Vorrunde
+      </NavLink>
+      <NavLink
+        to="/next-matches"
+        className={({ isActive }) => `nav-link${isActive ? ' nav-link--active' : ''}`}
+      >
+        Nächste Matches
       </NavLink>
       <NavLink
         to="/bracket"
