@@ -18,6 +18,8 @@ vi.mock('../api/client', () => ({
   getMatch: vi.fn(),
   getPlayers: vi.fn(),
   getMatchState: vi.fn(),
+  getMatchVisits: vi.fn(),
+  undoLastVisit: vi.fn(),
   recordVisit: vi.fn(),
 }))
 
@@ -25,7 +27,7 @@ vi.mock('../hooks/useWebSocket', () => ({
   useWebSocket: vi.fn(() => ({ lastEvent: null, isConnected: false })),
 }))
 
-import { getMatch, getPlayers, getMatchState, recordVisit } from '../api/client'
+import { getMatch, getPlayers, getMatchState, getMatchVisits, recordVisit } from '../api/client'
 import { useWebSocket } from '../hooks/useWebSocket'
 
 // ---------------------------------------------------------------------------
@@ -123,6 +125,7 @@ describe('ScoreEntryScreen', () => {
     vi.mocked(getMatch).mockResolvedValue(makeMatch())
     vi.mocked(getPlayers).mockResolvedValue([makePlayer(10, 'Lars'), makePlayer(20, 'Mike')])
     vi.mocked(getMatchState).mockResolvedValue(makeMatchState())
+    vi.mocked(getMatchVisits).mockResolvedValue([])
     vi.mocked(recordVisit).mockResolvedValue(makeVisitResponse())
   })
 
@@ -208,6 +211,7 @@ describe('ScoreEntryScreen', () => {
         dart3: 0,
         bounce_flags: [false, false, false],
         robin_hood_flags: [false, false, false],
+        dart_bands: ['triple', 'miss', 'miss'],
       })
     })
   })
@@ -231,6 +235,7 @@ describe('ScoreEntryScreen', () => {
         dart3: 24,
         bounce_flags: [false, false, false],
         robin_hood_flags: [false, false, false],
+        dart_bands: ['triple', 'triple', 'double'],
       })
     })
   })
@@ -251,6 +256,7 @@ describe('ScoreEntryScreen', () => {
         dart3: 0,
         bounce_flags: [true, false, false],
         robin_hood_flags: [false, false, false],
+        dart_bands: ['miss', 'miss', 'miss'],
       })
     })
   })
@@ -271,6 +277,7 @@ describe('ScoreEntryScreen', () => {
         dart3: 0,
         bounce_flags: [false, false, false],
         robin_hood_flags: [true, false, false],
+        dart_bands: ['miss', 'miss', 'miss'],
       })
     })
   })
@@ -399,8 +406,10 @@ describe('ScoreEntryScreen', () => {
 
   // ---- single-out banner ----------------------------------------------------------
 
-  it('shows single-out banner when visit_count_p1 >= 15 in vorrunde', async () => {
-    vi.mocked(getMatchState).mockResolvedValue(makeMatchState({ visit_count_p1: 15 }))
+  it('shows single-out banner when single_out_mode=true in vorrunde', async () => {
+    vi.mocked(getMatchState).mockResolvedValue(
+      makeMatchState({ visit_count_p1: 15, single_out_mode: true }),
+    )
 
     renderScoreEntry()
 
@@ -418,10 +427,10 @@ describe('ScoreEntryScreen', () => {
     expect(screen.queryByText(/Single-Out aktiv/i)).not.toBeInTheDocument()
   })
 
-  it('shows single-out banner from visit 25 in KO round', async () => {
+  it('shows single-out banner when single_out_mode=true in KO round', async () => {
     vi.mocked(getMatch).mockResolvedValue(makeMatch({ round_type: 'ko' }))
     vi.mocked(getMatchState).mockResolvedValue(
-      makeMatchState({ round_type: 'ko', visit_count_p1: 25 }),
+      makeMatchState({ round_type: 'ko', visit_count_p1: 25, single_out_mode: true }),
     )
 
     renderScoreEntry()
@@ -473,7 +482,7 @@ describe('ScoreEntryScreen', () => {
 
   // ---- doubles mode ---------------------------------------------------------------
 
-  it('shows doubles hint to select a player in doubles mode', async () => {
+  it('renders all four player names in doubles mode', async () => {
     vi.mocked(getMatch).mockResolvedValue(
       makeMatch({ player3_id: 30, player4_id: 40, round_type: 'vorrunde' }),
     )
@@ -488,7 +497,10 @@ describe('ScoreEntryScreen', () => {
     renderScoreEntry()
 
     await waitFor(() => {
-      expect(screen.getByText(/Spieler antippen/i)).toBeInTheDocument()
+      expect(screen.getByText('Lars')).toBeInTheDocument()
+      expect(screen.getByText('Jonas')).toBeInTheDocument()
+      expect(screen.getByText('Mike')).toBeInTheDocument()
+      expect(screen.getByText('Henrik')).toBeInTheDocument()
     })
   })
 

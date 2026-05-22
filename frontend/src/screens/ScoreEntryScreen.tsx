@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getMatch, getMatchState, getMatchVisits, getPlayers, recordVisit, undoLastVisit } from '../api/client'
-import type { MatchRead, MatchStateResponse, Player, RoundType, VisitHistoryItem, VisitResponse } from '../api/types'
+import type { MatchRead, MatchStateResponse, Player, RoundType, SpecialEventItem, VisitHistoryItem, VisitResponse } from '../api/types'
+import { SpecialEventPopup } from '../components/SpecialEventPopup'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { getDoubleOutCheckout } from '../utils/checkout'
-import type { CheckoutSuggestion } from '../utils/checkout'
+import { getDoubleOutCheckout, type CheckoutSuggestion } from '../utils/checkout'
 import './ScoreEntryScreen.css'
 
 // ---------------------------------------------------------------------------
@@ -279,6 +279,12 @@ export default function ScoreEntryScreen() {
   const [matchFinished, setMatchFinished] = useState(false)
   const [winnerId, setWinnerId] = useState<number | null>(null)
 
+  // ---- special event popup queue ----
+  // eventPopupKey increments on each dequeue so that the popup component remounts
+  // for every new event, ensuring displayValue resets to 0 without a setState-in-effect.
+  const [eventQueue, setEventQueue] = useState<SpecialEventItem[]>([])
+  const [eventPopupKey, setEventPopupKey] = useState(0)
+
   // ---- websocket ----
   const { lastEvent } = useWebSocket('match', id)
 
@@ -364,12 +370,32 @@ export default function ScoreEntryScreen() {
       refreshMatchState()
       refreshHistory()
     }
+
+    if (lastEvent.type === 'special_event') {
+      const data = lastEvent.data as {
+        event_type: string
+        bonus_value: number
+        count: number
+      }
+      Promise.resolve(data)
+        .then((d) => {
+          setEventQueue((prev) => [
+            ...prev,
+            { event_type: d.event_type, bonus_value: d.bonus_value, count: d.count },
+          ])
+        })
+        .catch(() => undefined)
+    }
   }, [lastEvent, refreshMatchState, refreshHistory])
 
   // Reset pending darts when the active player changes
   useEffect(() => {
-    setPendingDartTotal(0)
-    setPendingDartCount(0)
+    Promise.resolve()
+      .then(() => {
+        setPendingDartTotal(0)
+        setPendingDartCount(0)
+      })
+      .catch(() => undefined)
   }, [matchState?.current_player_id])
 
   // Cleanup bust timer on unmount
@@ -693,7 +719,7 @@ export default function ScoreEntryScreen() {
             setPendingDartTotal(total)
             setPendingDartCount(count)
           }}
-          disabled={submitting || undoing || activePlayerId == null}
+          disabled={submitting || undoing || activePlayerId == null || eventQueue.length > 0}
         />
       )}
 
@@ -761,7 +787,19 @@ export default function ScoreEntryScreen() {
         </div>
       )}
 
-      {/* Placeholder hook points for Task 17 (special event popup) and Task 18 (audio) */}
+      {/* ---- special event popup queue ---- */}
+      {eventQueue.length > 0 && (
+        <SpecialEventPopup
+          key={eventPopupKey}
+          event={eventQueue[0]}
+          onDone={() => {
+            setEventQueue((prev) => prev.slice(1))
+            setEventPopupKey((k) => k + 1)
+          }}
+        />
+      )}
+
+      {/* Placeholder hook point for Task 18 (audio) */}
     </div>
   )
 }
