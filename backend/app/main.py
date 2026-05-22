@@ -15,6 +15,7 @@ from app.routers import matches, players, tournaments, ws
 
 # Resolve user_input/pics relative to this file (backend/app/main.py → ../../user_input/pics)
 _PICS_DIR = Path(__file__).resolve().parent.parent.parent / "user_input" / "pics"
+_SOUND_DIR = Path(__file__).resolve().parent.parent.parent / "user_input" / "sound"
 
 
 @asynccontextmanager
@@ -34,6 +35,9 @@ app.add_middleware(
 
 if _PICS_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(_PICS_DIR)), name="static")
+
+if _SOUND_DIR.exists():
+    app.mount("/sounds", StaticFiles(directory=str(_SOUND_DIR)), name="sounds")
 
 
 # ---------------------------------------------------------------------------

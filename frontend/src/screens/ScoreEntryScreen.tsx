@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getMatch, getMatchState, getMatchVisits, getPlayers, recordVisit, undoLastVisit } from '../api/client'
 import type { MatchRead, MatchStateResponse, Player, RoundType, SpecialEventItem, VisitHistoryItem, VisitResponse } from '../api/types'
 import { SpecialEventPopup } from '../components/SpecialEventPopup'
+import { useAudio } from '../hooks/useAudio'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { getDoubleOutCheckout, getSingleOutCheckout, type CheckoutSuggestion } from '../utils/checkout'
 import './ScoreEntryScreen.css'
@@ -282,6 +283,9 @@ export default function ScoreEntryScreen() {
   const [eventQueue, setEventQueue] = useState<SpecialEventItem[]>([])
   const [eventPopupKey, setEventPopupKey] = useState(0)
 
+  // ---- audio ----
+  const { playScore, playBust } = useAudio()
+
   // ---- websocket ----
   const { lastEvent } = useWebSocket('match', id)
 
@@ -493,6 +497,13 @@ export default function ScoreEntryScreen() {
         robin_hood_flags: robinHoodFlags,
         dart_bands: dartBands,
       })
+
+      // Announce the visit score via audio
+      if (res.is_bust) {
+        playBust()
+      } else {
+        playScore(res.total)
+      }
 
       // Populate popup queue directly from the REST response — this guarantees
       // all events are shown even if multiple WebSocket messages are batched.
