@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react'
 import { API_BASE } from '../api/client'
 
 // ---------------------------------------------------------------------------
-// useAudio — score announcement and bust sound playback
+// useAudio — score announcement, bust sound, and win fanfare
 //
-// Preloads HTMLAudioElement instances for all scores 0–180 on first mount.
+// Preloads HTMLAudioElement instances for all scores 0–180 and named sounds
+// (gewonnen.mp3) on first mount.
 // Guarantees no overlap: any currently playing sound is stopped before a new
 // one starts. Missing files are handled gracefully (console.warn only).
 // ---------------------------------------------------------------------------
@@ -12,9 +13,12 @@ import { API_BASE } from '../api/client'
 export function useAudio(): {
   playScore: (total: number) => void
   playBust: () => void
+  playWin: () => void
 } {
   // Map from score value → preloaded Audio element
   const audioMapRef = useRef<Map<number, HTMLAudioElement>>(new Map())
+  // Named sounds: "gewonnen" etc.
+  const namedRef = useRef<Map<string, HTMLAudioElement>>(new Map())
   // Currently playing Audio element (if any)
   const currentRef = useRef<HTMLAudioElement | null>(null)
 
@@ -28,6 +32,16 @@ export function useAudio(): {
         console.warn(`[useAudio] Missing sound file: ${i}.mp3`)
       }
       map.set(i, audio)
+    }
+
+    const named = namedRef.current
+    for (const name of ['gewonnen']) {
+      const audio = new Audio(`${base}/${name}.mp3`)
+      audio.preload = 'auto'
+      audio.onerror = () => {
+        console.warn(`[useAudio] Missing sound file: ${name}.mp3`)
+      }
+      named.set(name, audio)
     }
 
     return () => {
@@ -65,5 +79,10 @@ export function useAudio(): {
     play(audioMapRef.current.get(0))
   }
 
-  return { playScore, playBust }
+  // Win fanfare: played when a match is finished
+  function playWin(): void {
+    play(namedRef.current.get('gewonnen'))
+  }
+
+  return { playScore, playBust, playWin }
 }

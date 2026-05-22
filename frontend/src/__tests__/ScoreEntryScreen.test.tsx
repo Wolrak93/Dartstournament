@@ -28,7 +28,7 @@ vi.mock('../hooks/useWebSocket', () => ({
 }))
 
 vi.mock('../hooks/useAudio', () => ({
-  useAudio: vi.fn(() => ({ playScore: vi.fn(), playBust: vi.fn() })),
+  useAudio: vi.fn(() => ({ playScore: vi.fn(), playBust: vi.fn(), playWin: vi.fn() })),
 }))
 
 import { getMatch, getPlayers, getMatchState, getMatchVisits, recordVisit } from '../api/client'

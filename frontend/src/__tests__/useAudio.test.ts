@@ -54,13 +54,26 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('useAudio', () => {
-  it('preloads audio elements for scores 0–180 on mount', () => {
+  it('preloads audio elements for scores 0–180 and named sounds on mount', () => {
     renderHook(() => useAudio())
 
-    // Expect 181 Audio objects created (0 through 180 inclusive)
-    expect(audioInstances).toHaveLength(181)
+    // 181 score files (0–180) + 1 named file (gewonnen)
+    expect(audioInstances).toHaveLength(182)
     expect(audioInstances.some((a) => a.src.endsWith('/180.mp3'))).toBe(true)
     expect(audioInstances.some((a) => a.src.endsWith('/0.mp3'))).toBe(true)
+    expect(audioInstances.some((a) => a.src.endsWith('/gewonnen.mp3'))).toBe(true)
+  })
+
+  it('playWin plays gewonnen.mp3', () => {
+    const { result } = renderHook(() => useAudio())
+
+    act(() => {
+      result.current.playWin()
+    })
+
+    const audioWin = audioInstances.find((a) => a.src.endsWith('/gewonnen.mp3'))
+    expect(audioWin).toBeDefined()
+    expect(audioWin!.play).toHaveBeenCalledTimes(1)
   })
 
   it('sets preload to auto for all preloaded files', () => {

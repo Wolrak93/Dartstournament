@@ -284,7 +284,7 @@ export default function ScoreEntryScreen() {
   const [eventPopupKey, setEventPopupKey] = useState(0)
 
   // ---- audio ----
-  const { playScore, playBust } = useAudio()
+  const { playScore, playBust, playWin } = useAudio()
 
   // ---- websocket ----
   const { lastEvent } = useWebSocket('match', id)
@@ -499,7 +499,9 @@ export default function ScoreEntryScreen() {
       })
 
       // Announce the visit score via audio
-      if (res.is_bust) {
+      if (res.match_finished) {
+        playWin()
+      } else if (res.is_bust) {
         playBust()
       } else {
         playScore(res.total)
