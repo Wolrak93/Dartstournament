@@ -57,11 +57,24 @@ describe('useAudio', () => {
   it('preloads audio elements for scores 0–180 and named sounds on mount', () => {
     renderHook(() => useAudio())
 
-    // 181 score files (0–180) + 1 named file (gewonnen)
-    expect(audioInstances).toHaveLength(182)
+    // 181 score files (0–180) + 2 named files (gewonnen, gameon)
+    expect(audioInstances).toHaveLength(183)
     expect(audioInstances.some((a) => a.src.endsWith('/180.mp3'))).toBe(true)
     expect(audioInstances.some((a) => a.src.endsWith('/0.mp3'))).toBe(true)
     expect(audioInstances.some((a) => a.src.endsWith('/gewonnen.mp3'))).toBe(true)
+    expect(audioInstances.some((a) => a.src.endsWith('/gameon.mp3'))).toBe(true)
+  })
+
+  it('playGameOn plays gameon.mp3', () => {
+    const { result } = renderHook(() => useAudio())
+
+    act(() => {
+      result.current.playGameOn()
+    })
+
+    const audioGameOn = audioInstances.find((a) => a.src.endsWith('/gameon.mp3'))
+    expect(audioGameOn).toBeDefined()
+    expect(audioGameOn!.play).toHaveBeenCalledTimes(1)
   })
 
   it('playWin plays gewonnen.mp3', () => {

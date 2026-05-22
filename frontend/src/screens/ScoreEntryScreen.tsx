@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getMatch, getMatchState, getMatchVisits, getPlayers, recordVisit, undoLastVisit } from '../api/client'
 import type { MatchRead, MatchStateResponse, Player, RoundType, SpecialEventItem, VisitHistoryItem, VisitResponse } from '../api/types'
@@ -284,7 +284,8 @@ export default function ScoreEntryScreen() {
   const [eventPopupKey, setEventPopupKey] = useState(0)
 
   // ---- audio ----
-  const { playScore, playBust, playWin } = useAudio()
+  const { playScore, playBust, playWin, playGameOn } = useAudio()
+  const gameOnPlayedRef = useRef(false)
 
   // ---- websocket ----
   const { lastEvent } = useWebSocket('match', id)
@@ -304,6 +305,11 @@ export default function ScoreEntryScreen() {
         if (state.status === 'finished' && matchData.winner_id != null) {
           setMatchFinished(true)
           setWinnerId(matchData.winner_id)
+        }
+        // Play game-on jingle once when leg starts (in_progress, not already finished)
+        if (state.status === 'in_progress' && !gameOnPlayedRef.current) {
+          gameOnPlayedRef.current = true
+          playGameOn()
         }
       })
       .catch((err: unknown) => {

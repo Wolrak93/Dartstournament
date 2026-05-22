@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react'
 import { API_BASE } from '../api/client'
 
 // ---------------------------------------------------------------------------
-// useAudio — score announcement, bust sound, and win fanfare
+// useAudio — score announcement, bust sound, win fanfare, and game-on jingle
 //
 // Preloads HTMLAudioElement instances for all scores 0–180 and named sounds
-// (gewonnen.mp3) on first mount.
+// (gewonnen.mp3, gameon.mp3) on first mount.
 // Guarantees no overlap: any currently playing sound is stopped before a new
 // one starts. Missing files are handled gracefully (console.warn only).
 // ---------------------------------------------------------------------------
@@ -14,10 +14,11 @@ export function useAudio(): {
   playScore: (total: number) => void
   playBust: () => void
   playWin: () => void
+  playGameOn: () => void
 } {
   // Map from score value → preloaded Audio element
   const audioMapRef = useRef<Map<number, HTMLAudioElement>>(new Map())
-  // Named sounds: "gewonnen" etc.
+  // Named sounds: "gewonnen", "gameon"
   const namedRef = useRef<Map<string, HTMLAudioElement>>(new Map())
   // Currently playing Audio element (if any)
   const currentRef = useRef<HTMLAudioElement | null>(null)
@@ -35,7 +36,7 @@ export function useAudio(): {
     }
 
     const named = namedRef.current
-    for (const name of ['gewonnen']) {
+    for (const name of ['gewonnen', 'gameon']) {
       const audio = new Audio(`${base}/${name}.mp3`)
       audio.preload = 'auto'
       audio.onerror = () => {
@@ -84,5 +85,10 @@ export function useAudio(): {
     play(namedRef.current.get('gewonnen'))
   }
 
-  return { playScore, playBust, playWin }
+  // Game-on jingle: played when a leg starts
+  function playGameOn(): void {
+    play(namedRef.current.get('gameon'))
+  }
+
+  return { playScore, playBust, playWin, playGameOn }
 }
