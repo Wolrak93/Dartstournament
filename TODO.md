@@ -187,30 +187,30 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 
 ---
 
-## Task 16 — Frontend: Score Entry Screen
+## Task 16 — Frontend: Score Entry Screen ✅
 
-**Branch:** `feature/frontend-score-entry`
+**Branch:** `feature/frontend-score-entry` → merged into `development`
 
 ### Screen (`/score/:matchId`)
-- [ ] Connect to `WS /ws/match/{matchId}` via `useWebSocket` hook
-- [ ] Score display panel: remaining score per player (large digits)
-- [ ] Current player indicator (highlighted name/side)
-- [ ] Visit counter per player
-- [ ] Large touch numpad: digits 0–9, DEL (backspace), CONFIRM
+- [x] Connect to `WS /ws/match/{matchId}` via `useWebSocket` hook
+- [x] Score display panel: remaining score per player (large digits)
+- [x] Current player indicator (highlighted name/side)
+- [x] Visit counter per player
+- [x] Large touch numpad: digits 0–9, DEL (backspace), CONFIRM
       - Input: up to 3 digits; shows running total as typed
       - CONFIRM → `POST /matches/{id}/visits`
-- [ ] Checkout suggestion panel: shown when remaining ≤ 170
-- [ ] Single-Out warning banner: shown after visit 15 (Vorrunde) or 25 (KO)
-- [ ] Bust feedback: red flash on score display, "BUST" overlay (auto-dismiss)
-- [ ] Match finished overlay: "Winner: [Name]", final scores, "Next Match" button
-- [ ] Special event popup: rendered as overlay (see Task 17)
-- [ ] Audio playback on confirmed visit (see Task 18)
+- [x] Checkout suggestion panel: shown when remaining ≤ 170
+- [x] Single-Out warning banner: shown after visit 15 (Vorrunde) or 25 (KO)
+- [x] Bust feedback: red flash on score display, "BUST" overlay (auto-dismiss)
+- [x] Match finished overlay: "Winner: [Name]", final scores, "Next Match" button
+- [x] Special event popup: rendered as overlay (see Task 17)
+- [x] Audio playback on confirmed visit (see Task 18)
 
 ### Tests
-- [ ] Numpad input → formats score correctly → calls API
-- [ ] Bust: shows bust overlay, score unchanged
-- [ ] Checkout suggestion: updates on each WebSocket `score_update`
-- [ ] Single-Out banner: appears at correct visit count
+- [x] Numpad input → formats score correctly → calls API
+- [x] Bust: shows bust overlay, score unchanged
+- [x] Checkout suggestion: updates on each WebSocket `score_update`
+- [x] Single-Out banner: appears at correct visit count
 
 ---
 
