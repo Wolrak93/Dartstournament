@@ -214,22 +214,22 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 
 ---
 
-## Task 17 — Frontend: Special Event Popup
+## Task 17 — Frontend: Special Event Popup ✅
 
-**Branch:** `feature/frontend-events-popup`
+**Branch:** `feature/frontend-events-popup` → merged into `development`
 
 ### Popup Component
-- [ ] Fullscreen overlay rendered above Score Entry screen
-- [ ] Triggered by `special_event` WebSocket message
-- [ ] Per event: show event name + animated counter (0 → bonus_value)
+- [x] Fullscreen overlay rendered above Score Entry screen
+- [x] Triggered by `special_event` WebSocket message
+- [x] Per event: show event name + animated counter (0 → bonus_value)
       - Positive values: count up (green); negative: count down (red)
-- [ ] Multiple events per visit: show sequentially (queue, not stacked)
-- [ ] Auto-dismiss after animation completes (no manual dismiss needed)
-- [ ] Dismisses to Score Entry screen state underneath
+- [x] Multiple events per visit: show sequentially (queue, not stacked)
+- [x] Auto-dismiss after animation completes (no manual dismiss needed)
+- [x] Dismisses to Score Entry screen state underneath
 
 ### Tests
-- [ ] Renders single event, completes animation, dismisses
-- [ ] Queue: two events shown in order
+- [x] Renders single event, completes animation, dismisses
+- [x] Queue: two events shown in order
 
 ---
 
@@ -242,7 +242,7 @@ A task is only done when: code works, tests pass, user has approved, branch merg
       - Score files: `0.mp3` through `180.mp3` (verify available filenames)
       - Bust sound: if a bust MP3 exists, play on bust; otherwise skip
 - [ ] `playScore(total: number)` — plays matching MP3 after visit confirmed
-- [ ] `playBust()` — plays bust sound if available
+- [ ] `playBust()` — plays bust sound if available (`0.mp3`)
 - [ ] No overlap: cancel any currently playing sound before starting new one
 - [ ] Graceful fallback: if file missing, log warning and continue silently
 - [ ] Hook `useAudio()` for use in Score Entry screen

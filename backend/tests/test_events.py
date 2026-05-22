@@ -249,6 +249,15 @@ def test_tripel_bounce_not_counted():
     assert EventType.BOUNCE in _event_types(events)
 
 
+def test_tripel_no_trigger_on_bust():
+    # T20+T20+T20=180 > remaining=60 → bust; Tripel must not fire.
+    visit = _make_visit([_triple(20), _triple(20), _triple(20)], remaining=60)
+    assert visit.is_bust
+    events = detect_events(visit, remaining_before=60)
+    assert EventType.TRIPEL not in _event_types(events)
+    assert EventType.BUST in _event_types(events)
+
+
 # ---------------------------------------------------------------------------
 # 7. Tripel 20
 # ---------------------------------------------------------------------------
@@ -281,6 +290,13 @@ def test_tripel_not_20_does_not_trigger_tripel_20():
     assert EventType.TRIPEL in _event_types(events)
 
 
+def test_tripel_20_no_trigger_on_bust():
+    visit = _make_visit([_triple(20), _triple(20), _triple(20)], remaining=60)
+    assert visit.is_bust
+    events = detect_events(visit, remaining_before=60)
+    assert EventType.TRIPEL_20 not in _event_types(events)
+
+
 # ---------------------------------------------------------------------------
 # 8. Bull (single bull)
 # ---------------------------------------------------------------------------
@@ -304,6 +320,15 @@ def test_bull_multiple():
     assert ev.bonus_value == 50
 
 
+def test_bull_no_trigger_on_bust():
+    # Bull=25, remaining=20 → bust
+    visit = _make_visit([_bull(), _miss(), _miss()], remaining=20)
+    assert visit.is_bust
+    events = detect_events(visit, remaining_before=20)
+    assert EventType.BULL not in _event_types(events)
+    assert EventType.BUST in _event_types(events)
+
+
 # ---------------------------------------------------------------------------
 # 9. Bulls Eye (double bull)
 # ---------------------------------------------------------------------------
@@ -316,6 +341,15 @@ def test_bullseye_triggers():
     assert ev is not None
     assert ev.count == 1
     assert ev.bonus_value == 50
+
+
+def test_bullseye_no_trigger_on_bust():
+    # Bullseye=50 > remaining=40 → bust
+    visit = _make_visit([_bullseye(), _miss(), _miss()], remaining=40)
+    assert visit.is_bust
+    events = detect_events(visit, remaining_before=40)
+    assert EventType.BULLSEYE not in _event_types(events)
+    assert EventType.BUST in _event_types(events)
 
 
 # ---------------------------------------------------------------------------
@@ -365,6 +399,21 @@ def test_robin_hood_not_counted_as_tripel():
     events = detect_events(visit, remaining_before=300)
     assert EventType.TRIPEL not in _event_types(events)
     assert EventType.ROBIN_HOOD in _event_types(events)
+
+
+def test_bounce_and_robin_hood_fire_on_bust():
+    # Even when the visit is a bust, Bounce and Robin Hood should still be detected.
+    bounce = _bounce(20)   # score=60, bounce=True → doesn't count toward total
+    rh = _robin_hood(20)   # score=20, robin_hood=True → doesn't count toward total
+    # remaining=10, actual scored = 0 (both excluded) → not a bust from these two
+    # Let's make a bust with a single + bounce combo:
+    # S20=20 + S1=1 = 21 > remaining=20 → bust, and also a bounce dart
+    visit = _pv([_single(20), _single(1), _bounce(5)], remaining=20)
+    assert visit.is_bust
+    events = detect_events(visit, remaining_before=20)
+    assert EventType.BOUNCE in _event_types(events)
+    assert EventType.BUST in _event_types(events)
+    assert EventType.TRIPEL not in _event_types(events)
 
 
 # ---------------------------------------------------------------------------
@@ -516,6 +565,17 @@ def test_shanghai_no_trigger_different_numbers():
     events = detect_events(visit, remaining_before=300)
     assert EventType.SHANGHAI not in _event_types(events)
     assert EventType.GLEICHE_ZAHL not in _event_types(events)
+
+
+def test_shanghai_no_trigger_on_bust():
+    # S1+D1+T1 = 1+2+3 = 6 > remaining=4 → bust
+    darts = [_single(1), _double(1), _triple(1)]
+    visit = _pv(darts, remaining=4)
+    assert visit.is_bust
+    events = detect_events(visit, remaining_before=4)
+    assert EventType.SHANGHAI not in _event_types(events)
+    assert EventType.GLEICHE_ZAHL not in _event_types(events)
+    assert EventType.BUST in _event_types(events)
 
 
 # ---------------------------------------------------------------------------

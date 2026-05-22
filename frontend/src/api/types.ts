@@ -139,6 +139,7 @@ export interface SpecialEventItem {
   event_type: string
   bonus_value: number
   count: number
+  tournament_count: number
 }
 
 export interface VisitResponse {
@@ -157,6 +158,7 @@ export interface CheckoutSuggestion {
   darts: string[]
   is_finish: boolean
   leave: number
+  text: string
 }
 
 export interface VisitHistoryItem {
