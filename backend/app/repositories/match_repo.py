@@ -83,7 +83,8 @@ async def update_standings_after_vorrunde_match(
     match: Match,
     winner_id: int,
 ) -> None:
-    """Update reg_points and avg_score for all players after a Vorrunde match."""
+    """Update reg_points, avg_score, and bonus_points for all players after a Vorrunde match."""
+    from app.repositories.special_event_repo import sum_bonus_by_player_and_tournament
     from app.repositories.visit_repo import list_visits_by_tournament_and_player
     from app.repositories.tournament_player_repo import (
         get_tournament_player,
@@ -105,12 +106,16 @@ async def update_standings_after_vorrunde_match(
             continue
 
         new_reg = tp.reg_points + (1.0 if player_id in winner_team else 0.0)
+        new_bonus = await sum_bonus_by_player_and_tournament(
+            db, match.tournament_id, player_id
+        )
         await update_tournament_player_standing(
             db,
             tournament_id=match.tournament_id,
             player_id=player_id,
             reg_points=new_reg,
             avg_score=avg,
+            bonus_points=new_bonus,
         )
 
 
@@ -138,6 +143,7 @@ async def undo_standings_after_vorrunde_match(
     The visit must already be deleted from the DB before calling this so that
     the avg recalculation reflects the correct remaining visits.
     """
+    from app.repositories.special_event_repo import sum_bonus_by_player_and_tournament
     from app.repositories.visit_repo import list_visits_by_tournament_and_player
     from app.repositories.tournament_player_repo import (
         get_tournament_player,
@@ -159,12 +165,16 @@ async def undo_standings_after_vorrunde_match(
             continue
 
         new_reg = tp.reg_points - (1.0 if player_id in winner_team else 0.0)
+        new_bonus = await sum_bonus_by_player_and_tournament(
+            db, match.tournament_id, player_id
+        )
         await update_tournament_player_standing(
             db,
             tournament_id=match.tournament_id,
             player_id=player_id,
             reg_points=max(0.0, new_reg),
             avg_score=avg,
+            bonus_points=new_bonus,
         )
 
 

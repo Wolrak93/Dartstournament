@@ -17,6 +17,7 @@ from app.repositories.match_repo import (
     update_match_winner,
     update_standings_after_vorrunde_match,
 )
+from app.repositories.special_event_repo import count_event_by_type_in_tournament
 from app.repositories.visit_repo import (
     get_last_visit_by_match,
     list_visits_by_match,
@@ -422,11 +423,21 @@ async def record_visit(
 
     await db.commit()
 
+    # Query cumulative tournament count for each detected event type.
+    tournament_counts: dict[str, int] = {}
+    for e in events:
+        key = e.event_type.value
+        if key not in tournament_counts:
+            tournament_counts[key] = await count_event_by_type_in_tournament(
+                db, match.tournament_id, e.event_type
+            )
+
     event_items = [
         SpecialEventItem(
             event_type=e.event_type.value,
             bonus_value=e.bonus_value,
             count=e.count,
+            tournament_count=tournament_counts[e.event_type.value],
         )
         for e in events
     ]
@@ -469,6 +480,7 @@ async def record_visit(
                     "event_type": e.event_type,
                     "bonus_value": e.bonus_value,
                     "count": e.count,
+                    "tournament_count": e.tournament_count,
                 },
             },
         )
@@ -605,6 +617,7 @@ async def get_match_state(
                 darts=suggestion.darts,
                 is_finish=suggestion.is_finish,
                 leave=suggestion.leave,
+                text=suggestion.text,
             )
 
     return MatchStateResponse(

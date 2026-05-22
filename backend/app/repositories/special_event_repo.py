@@ -56,6 +56,28 @@ async def sum_bonus_by_player_and_tournament(
     return int(result.scalar_one())
 
 
+async def count_event_by_type_in_tournament(
+    db: AsyncSession,
+    tournament_id: int,
+    event_type: EventType,
+) -> int:
+    """Return the total occurrence count of event_type across all matches in tournament.
+
+    Sums the ``count`` column so that events that fire multiple times per visit
+    (e.g. Tripel, Bull) are counted correctly.
+    """
+    result = await db.execute(
+        select(func.coalesce(func.sum(SpecialEvent.count), 0))
+        .join(Visit, SpecialEvent.visit_id == Visit.id)
+        .join(Match, Visit.match_id == Match.id)
+        .where(
+            Match.tournament_id == tournament_id,
+            SpecialEvent.event_type == event_type,
+        )
+    )
+    return int(result.scalar_one())
+
+
 async def list_events_by_visit(
     db: AsyncSession,
     visit_id: int,

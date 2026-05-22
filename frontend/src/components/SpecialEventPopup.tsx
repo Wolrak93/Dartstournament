@@ -47,7 +47,8 @@ interface SpecialEventPopupProps {
 }
 
 export function SpecialEventPopup({ event, onDone }: SpecialEventPopupProps) {
-  const [displayValue, setDisplayValue] = useState(0)
+  const startValue = event.tournament_count - event.count
+  const [displayValue, setDisplayValue] = useState(startValue)
 
   // Always hold the latest onDone without re-triggering the animation effect
   const onDoneRef = useRef(onDone)
@@ -57,19 +58,10 @@ export function SpecialEventPopup({ event, onDone }: SpecialEventPopupProps) {
 
   useEffect(() => {
     // Note: the parent mounts a fresh component instance via a key prop for each
-    // new event, so displayValue always starts at 0 from useState(0) — no reset needed here.
+    // new event, so displayValue always starts at startValue — no reset needed here.
 
-    const totalBonus = event.bonus_value
-
-    if (totalBonus === 0) {
-      // No counter animation; show event name and dismiss after display period
-      const t = setTimeout(
-        () => onDoneRef.current(),
-        ANIMATION_DURATION_MS + DISMISS_DELAY_MS,
-      )
-      return () => clearTimeout(t)
-    }
-
+    const start = event.tournament_count - event.count
+    const target = event.tournament_count
     const startTime = Date.now()
 
     const interval = setInterval(() => {
@@ -80,9 +72,9 @@ export function SpecialEventPopup({ event, onDone }: SpecialEventPopupProps) {
         const progress = elapsed / ANIMATION_DURATION_MS
         // Ease-out cubic: slow down near the end for dramatic effect
         const eased = 1 - Math.pow(1 - progress, 3)
-        setDisplayValue(Math.round(eased * totalBonus))
+        setDisplayValue(Math.round(start + eased * (target - start)))
       } else {
-        setDisplayValue(totalBonus)
+        setDisplayValue(target)
       }
 
       if (elapsed >= ANIMATION_DURATION_MS + DISMISS_DELAY_MS) {
@@ -94,14 +86,11 @@ export function SpecialEventPopup({ event, onDone }: SpecialEventPopupProps) {
     return () => clearInterval(interval)
   }, [event]) // Re-run only when a new event arrives
 
-  const totalBonus = event.bonus_value
-  const isPositive = totalBonus > 0
-  const hasBonus = totalBonus !== 0
+  const isPositive = event.bonus_value > 0
+  const isNegative = event.bonus_value < 0
 
   const label = EVENT_LABELS[event.event_type] ?? event.event_type
   const countSuffix = event.count > 1 ? ` ×${event.count}` : ''
-
-  const valueText = isPositive ? `+${displayValue}` : String(displayValue)
 
   return (
     <div className="event-popup" role="status" aria-live="assertive">
@@ -110,7 +99,7 @@ export function SpecialEventPopup({ event, onDone }: SpecialEventPopupProps) {
           'event-popup-card',
           isPositive
             ? 'event-popup-card--positive'
-            : hasBonus
+            : isNegative
               ? 'event-popup-card--negative'
               : 'event-popup-card--neutral',
         ].join(' ')}
@@ -120,16 +109,11 @@ export function SpecialEventPopup({ event, onDone }: SpecialEventPopupProps) {
           {countSuffix}
         </div>
 
-        {hasBonus && (
-          <>
-            <div
-              className={`event-popup-value ${isPositive ? 'event-popup-value--positive' : 'event-popup-value--negative'}`}
-            >
-              {valueText}
-            </div>
-            <div className="event-popup-currency">¥$</div>
-          </>
-        )}
+        <div
+          className={`event-popup-value ${isPositive ? 'event-popup-value--positive' : isNegative ? 'event-popup-value--negative' : ''}`}
+        >
+          {displayValue}
+        </div>
       </div>
     </div>
   )

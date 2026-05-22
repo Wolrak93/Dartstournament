@@ -315,10 +315,15 @@ describe('ScoreEntryScreen', () => {
     })
   })
 
-  // ---- bust overlay ----------------------------------------------------------------
+  // ---- bust special event popup ---------------------------------------------------
 
-  it('shows BUST overlay when recordVisit returns is_bust=true', async () => {
-    vi.mocked(recordVisit).mockResolvedValue(makeVisitResponse({ is_bust: true }))
+  it('shows BUST special event popup when recordVisit returns is_bust=true with bust event', async () => {
+    vi.mocked(recordVisit).mockResolvedValue(
+      makeVisitResponse({
+        is_bust: true,
+        special_events: [{ event_type: 'bust', bonus_value: -1, count: 1, tournament_count: 1 }],
+      }),
+    )
     const user = userEvent.setup()
     renderScoreEntry()
     await waitForLoaded()
@@ -327,7 +332,7 @@ describe('ScoreEntryScreen', () => {
     await user.click(screen.getByRole('button', { name: '✓' }))
 
     await waitFor(() => {
-      expect(screen.getByText('BUST!')).toBeInTheDocument()
+      expect(screen.getByText('BUST')).toBeInTheDocument()
     })
   })
 
@@ -341,15 +346,35 @@ describe('ScoreEntryScreen', () => {
           darts: ['T20', 'T18', 'Bull'],
           is_finish: true,
           leave: 0,
+          text: 'T20 T18 Bull',
         },
       }),
     )
 
     renderScoreEntry()
 
-    // The checkout suggestion joins darts with spaces: "T20 T18 Bull"
     await waitFor(() => {
       expect(screen.getByText('T20 T18 Bull')).toBeInTheDocument()
+    })
+  })
+
+  it('shows raw text from checkout table for non-finish suggestions', async () => {
+    vi.mocked(getMatchState).mockResolvedValue(
+      makeMatchState({
+        remaining_p1: 229,
+        checkout_suggestion: {
+          darts: ['T20'],
+          is_finish: false,
+          leave: 169,
+          text: 'No Finish (T20)',
+        },
+      }),
+    )
+
+    renderScoreEntry()
+
+    await waitFor(() => {
+      expect(screen.getByText('No Finish (T20)')).toBeInTheDocument()
     })
   })
 
@@ -438,6 +463,38 @@ describe('ScoreEntryScreen', () => {
     await waitFor(() => {
       expect(screen.getByText(/Single-Out aktiv/i)).toBeInTheDocument()
     })
+  })
+
+  it('updates single-out checkout to "No Finish (T20)" after one dart entered mid-visit', async () => {
+    // Remaining 123, single-out active: server suggestion for 3 darts = "T20 T20 S3".
+    // After entering S20 (20 pts), remaining → 103, dartsLeft = 2.
+    // 103 cannot be finished in 2 darts single-out → expect "No Finish (T20)".
+    vi.mocked(getMatchState).mockResolvedValue(
+      makeMatchState({
+        remaining_p1: 123,
+        single_out_mode: true,
+        checkout_suggestion: {
+          darts: ['T20', 'T20', 'S3'],
+          is_finish: true,
+          leave: 0,
+          text: 'T20 T20 S3',
+        },
+      }),
+    )
+
+    const user = userEvent.setup()
+    renderScoreEntry()
+    await waitForLoaded()
+
+    // Initial server suggestion shown
+    expect(screen.getByText('T20 T20 S3')).toBeInTheDocument()
+
+    // Enter single 20 (label "20", value 20) as first dart
+    await user.click(screen.getByRole('button', { name: '20' }))
+
+    // Checkout should now show "No Finish (T20)" for remaining=103, 2 darts left
+    expect(screen.getByText('No Finish (T20)')).toBeInTheDocument()
+    expect(screen.queryByText('T20 T20 S3')).not.toBeInTheDocument()
   })
 
   // ---- match finished overlay -----------------------------------------------------

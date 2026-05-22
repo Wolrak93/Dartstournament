@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getMatch, getMatchState, getMatchVisits, getPlayers, recordVisit, undoLastVisit } from '../api/client'
 import type { MatchRead, MatchStateResponse, Player, RoundType, SpecialEventItem, VisitHistoryItem, VisitResponse } from '../api/types'
 import { SpecialEventPopup } from '../components/SpecialEventPopup'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { getDoubleOutCheckout, type CheckoutSuggestion } from '../utils/checkout'
+import { getDoubleOutCheckout, getSingleOutCheckout, type CheckoutSuggestion } from '../utils/checkout'
 import './ScoreEntryScreen.css'
 
 // ---------------------------------------------------------------------------
@@ -273,9 +273,6 @@ export default function ScoreEntryScreen() {
   const [pendingDartCount, setPendingDartCount] = useState(0)
 
   // ---- overlays ----
-  const [bustActive, setBustActive] = useState(false)
-  const bustTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
   const [matchFinished, setMatchFinished] = useState(false)
   const [winnerId, setWinnerId] = useState<number | null>(null)
 
@@ -370,22 +367,6 @@ export default function ScoreEntryScreen() {
       refreshMatchState()
       refreshHistory()
     }
-
-    if (lastEvent.type === 'special_event') {
-      const data = lastEvent.data as {
-        event_type: string
-        bonus_value: number
-        count: number
-      }
-      Promise.resolve(data)
-        .then((d) => {
-          setEventQueue((prev) => [
-            ...prev,
-            { event_type: d.event_type, bonus_value: d.bonus_value, count: d.count },
-          ])
-        })
-        .catch(() => undefined)
-    }
   }, [lastEvent, refreshMatchState, refreshHistory])
 
   // Reset pending darts when the active player changes
@@ -397,14 +378,6 @@ export default function ScoreEntryScreen() {
       })
       .catch(() => undefined)
   }, [matchState?.current_player_id])
-
-  // Cleanup bust timer on unmount
-  useEffect(
-    () => () => {
-      if (bustTimerRef.current) clearTimeout(bustTimerRef.current)
-    },
-    [],
-  )
 
   // ---------------------------------------------------------------------------
   // Derived values
@@ -474,14 +447,13 @@ export default function ScoreEntryScreen() {
       // No darts entered yet — use the server suggestion as-is
       return matchState.checkout_suggestion
     }
-    if (matchState.single_out_mode) {
-      // Single-out recalculation is not supported client-side; keep server suggestion
-      return matchState.checkout_suggestion
-    }
     const team1Active = team1Ids.includes(activePlayerId)
     const activeRemaining = team1Active ? matchState.remaining_p1 : matchState.remaining_p2
     const effectiveRemaining = activeRemaining - pendingDartTotal
     const dartsLeft = 3 - pendingDartCount
+    if (matchState.single_out_mode) {
+      return getSingleOutCheckout(effectiveRemaining, dartsLeft)
+    }
     return getDoubleOutCheckout(effectiveRemaining, dartsLeft)
   }
 
@@ -522,10 +494,10 @@ export default function ScoreEntryScreen() {
         dart_bands: dartBands,
       })
 
-      if (res.is_bust) {
-        setBustActive(true)
-        if (bustTimerRef.current) clearTimeout(bustTimerRef.current)
-        bustTimerRef.current = setTimeout(() => setBustActive(false), 2000)
+      // Populate popup queue directly from the REST response — this guarantees
+      // all events are shown even if multiple WebSocket messages are batched.
+      if (res.special_events.length > 0) {
+        setEventQueue((prev) => [...prev, ...res.special_events])
       }
 
       if (res.match_finished) {
@@ -652,7 +624,7 @@ export default function ScoreEntryScreen() {
               </div>
             ))}
           </div>
-          <div className={`score-remaining${bustActive && isTeam1Active ? ' score-remaining--bust' : ''}`}>
+          <div className="score-remaining">
             {String(matchState.remaining_p1)}
             {pendingDartTotal > 0 && team1Ids.includes(activePlayerId ?? -1) && (
               <span className="score-last-visit">({matchState.remaining_p1 - pendingDartTotal})</span>
@@ -660,7 +632,7 @@ export default function ScoreEntryScreen() {
           </div>
           {isTeam1Active && !matchFinished && activeDynamicCheckout() != null && (
             <div className="score-checkout">
-              {activeDynamicCheckout()!.darts.join(' ')}
+              {activeDynamicCheckout()!.text}
             </div>
           )}
         </div>
@@ -690,7 +662,7 @@ export default function ScoreEntryScreen() {
               </div>
             ))}
           </div>
-          <div className={`score-remaining${bustActive && !isTeam1Active ? ' score-remaining--bust' : ''}`}>
+          <div className="score-remaining">
             {String(matchState.remaining_p2)}
             {pendingDartTotal > 0 && team2Ids.includes(activePlayerId ?? -1) && (
               <span className="score-last-visit">({matchState.remaining_p2 - pendingDartTotal})</span>
@@ -698,7 +670,7 @@ export default function ScoreEntryScreen() {
           </div>
           {!isTeam1Active && activePlayerId != null && !matchFinished && activeDynamicCheckout() != null && (
             <div className="score-checkout">
-              {activeDynamicCheckout()!.darts.join(' ')}
+              {activeDynamicCheckout()!.text}
             </div>
           )}
         </div>
@@ -735,16 +707,6 @@ export default function ScoreEntryScreen() {
           >
             {undoing ? '...' : '↩ Letzten Wurf korrigieren'}
           </button>
-        </div>
-      )}
-
-      {/* ---- bust overlay ---- */}
-      {bustActive && (
-        <div className="score-overlay score-overlay--bust" role="alert" aria-live="assertive">
-          <div className="score-overlay-content">
-            <div className="score-overlay-title">BUST!</div>
-            <div className="score-overlay-sub">Score wird zurückgesetzt</div>
-          </div>
         </div>
       )}
 

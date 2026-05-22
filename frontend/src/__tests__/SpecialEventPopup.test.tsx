@@ -16,6 +16,7 @@ function makeEvent(overrides: Partial<SpecialEventItem> = {}): SpecialEventItem 
     event_type: 'tripel',
     bonus_value: 3,
     count: 1,
+    tournament_count: 1,
     ...overrides,
   }
 }
@@ -75,29 +76,20 @@ describe('SpecialEventPopup', () => {
     expect(screen.queryByText(/×1/)).not.toBeInTheDocument()
   })
 
-  it('shows the ¥$ currency label for positive bonus events', () => {
-    render(<SpecialEventPopup event={makeEvent({ bonus_value: 3 })} onDone={vi.fn()} />)
-    expect(screen.getByText('¥$')).toBeInTheDocument()
-  })
-
-  it('shows the ¥$ currency label for negative bonus events', () => {
-    render(<SpecialEventPopup event={makeEvent({ event_type: 'bogey', bonus_value: -25 })} onDone={vi.fn()} />)
-    expect(screen.getByText('¥$')).toBeInTheDocument()
-  })
-
-  it('does not show ¥$ currency label when bonus_value is 0', () => {
-    render(<SpecialEventPopup event={makeEvent({ bonus_value: 0 })} onDone={vi.fn()} />)
+  it('never shows the ¥$ currency label', () => {
+    render(<SpecialEventPopup event={makeEvent({ bonus_value: 3, tournament_count: 5 })} onDone={vi.fn()} />)
     expect(screen.queryByText('¥$')).not.toBeInTheDocument()
   })
 
-  it('shows positive value with + prefix', () => {
-    render(<SpecialEventPopup event={makeEvent({ bonus_value: 1800, event_type: '180_geworfen' })} onDone={vi.fn()} />)
-    // Starts at +0 during animation
-    expect(screen.getByText('+0')).toBeInTheDocument()
+  it('counter starts at the previous tournament count (tournament_count - count)', () => {
+    // count=1, tournament_count=5 → starts at 4, animates to 5
+    render(<SpecialEventPopup event={makeEvent({ count: 1, tournament_count: 5 })} onDone={vi.fn()} />)
+    expect(screen.getByText('4')).toBeInTheDocument()
   })
 
-  it('starts at 0 for negative bonus events', () => {
-    render(<SpecialEventPopup event={makeEvent({ event_type: 'bogey', bonus_value: -25 })} onDone={vi.fn()} />)
+  it('counter starts at 0 when this is the very first occurrence', () => {
+    // count=1, tournament_count=1 → old value = 0
+    render(<SpecialEventPopup event={makeEvent({ count: 1, tournament_count: 1 })} onDone={vi.fn()} />)
     expect(screen.getByText('0')).toBeInTheDocument()
   })
 
@@ -116,9 +108,9 @@ describe('SpecialEventPopup', () => {
     expect(onDone).toHaveBeenCalledTimes(1)
   })
 
-  it('calls onDone after display period for a zero-bonus event', async () => {
+  it('calls onDone after display period for a zero-bonus event (KO round)', async () => {
     const onDone = vi.fn()
-    render(<SpecialEventPopup event={makeEvent({ bonus_value: 0 })} onDone={onDone} />)
+    render(<SpecialEventPopup event={makeEvent({ bonus_value: 0, tournament_count: 3 })} onDone={onDone} />)
 
     expect(onDone).not.toHaveBeenCalled()
 
@@ -151,15 +143,15 @@ describe('SpecialEventPopup', () => {
     expect(onDone).not.toHaveBeenCalled()
   })
 
-  it('shows final value at end of animation', async () => {
-    render(<SpecialEventPopup event={makeEvent({ bonus_value: 17, event_type: 'tripel_20' })} onDone={vi.fn()} />)
+  it('shows final tournament_count value at end of animation', async () => {
+    render(<SpecialEventPopup event={makeEvent({ tournament_count: 17, event_type: 'tripel_20' })} onDone={vi.fn()} />)
 
     await act(async () => {
       // Advance past animation but before dismiss
       vi.advanceTimersByTime(1200 + 20)
     })
 
-    expect(screen.getByText('+17')).toBeInTheDocument()
+    expect(screen.getByText('17')).toBeInTheDocument()
   })
 
   // ---- queue: two events shown in order -------------------------------------

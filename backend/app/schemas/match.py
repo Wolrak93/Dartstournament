@@ -112,6 +112,7 @@ class SpecialEventItem(BaseModel):
     event_type: str
     bonus_value: int
     count: int
+    tournament_count: int = 0  # total occurrences of this event type in the tournament
 
 
 class VisitResponse(BaseModel):
@@ -130,6 +131,7 @@ class CheckoutSuggestionResponse(BaseModel):
     darts: list[str]
     is_finish: bool
     leave: int
+    text: str
 
 
 class MatchStateResponse(BaseModel):
