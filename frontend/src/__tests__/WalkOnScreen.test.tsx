@@ -144,7 +144,7 @@ describe('WalkOnScreen', () => {
 
     await user.click(screen.getByRole('button', { name: /musik starten/i }))
 
-    expect(global.Audio).toHaveBeenCalledWith('http://localhost:8000/static/music/Lars.mp3')
+    expect(vi.mocked(Audio)).toHaveBeenCalledWith('http://localhost:8000/static/music/Lars.mp3')
     expect(mockPlay).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: /ready/i })).toBeInTheDocument()
   })
@@ -206,7 +206,7 @@ describe('WalkOnScreen', () => {
 
     await user.click(screen.getByRole('button', { name: /musik starten/i }))
 
-    expect(global.Audio).not.toHaveBeenCalled()
+    expect(vi.mocked(Audio)).not.toHaveBeenCalled()
     expect(mockPlay).not.toHaveBeenCalled()
     // Phase still advances to p1-playing
     expect(screen.getByRole('button', { name: /ready/i })).toBeInTheDocument()
