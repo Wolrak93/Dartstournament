@@ -47,11 +47,12 @@ export default function WalkOnScreen() {
       .finally(() => setLoading(false))
   }, [matchId, tournamentId])
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       audioRef.current?.pause()
-    }
-  }, [])
+    },
+    [],
+  )
 
   function stopMusic(): void {
     if (audioRef.current) {

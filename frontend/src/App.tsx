@@ -8,13 +8,14 @@ import StandingsScreen from './screens/StandingsScreen'
 import BracketScreen from './screens/BracketScreen'
 import LightningScreen from './screens/LightningScreen'
 import NextMatchesScreen from './screens/NextMatchesScreen'
+import WalkOnScreen from './screens/WalkOnScreen'
 
 const router = createBrowserRouter([
   { path: '/', element: <HomeScreen /> },
   { path: '/setup', element: <SetupScreen /> },
   { path: '/bull-throw/:matchId', element: <BullThrowScreen /> },
   { path: '/score/:matchId', element: <ScoreEntryScreen /> },
-  { path: '/walkon/:matchId', element: <div>Walk-on (Task 19)</div> },
+  { path: '/walkon/:matchId', element: <WalkOnScreen /> },
   { path: '/standings', element: <StandingsScreen /> },
   { path: '/next-matches', element: <NextMatchesScreen /> },
   { path: '/bracket', element: <BracketScreen /> },

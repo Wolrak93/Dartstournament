@@ -112,7 +112,10 @@ describe('WalkOnScreen', () => {
     mockPlay.mockResolvedValue(undefined)
     vi.stubGlobal(
       'Audio',
-      vi.fn(function () { return { play: mockPlay, pause: mockPause, currentTime: 0 } }),
+      // eslint-disable-next-line prefer-arrow-callback
+      vi.fn(function () {
+        return { play: mockPlay, pause: mockPause, currentTime: 0 }
+      }),
     )
   })
 
