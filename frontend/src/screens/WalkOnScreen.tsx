@@ -63,9 +63,7 @@ export default function WalkOnScreen() {
   function startMusic(player: Player): void {
     stopMusic()
     if (!player.music_path) return
-    // Call Audio as a function (not constructor) so test mocks using arrow functions work
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const audio = (Audio as any)(`${API_BASE}/static/${player.music_path}`) as HTMLAudioElement
+    const audio = new Audio(`${API_BASE}/static/${player.music_path}`)
     audioRef.current = audio
     audio.play()?.catch((err: unknown) => {
       console.warn('[WalkOnScreen] Music playback failed:', err)
