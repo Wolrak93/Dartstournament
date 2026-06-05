@@ -8,12 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.exceptions import bad_request, conflict, not_found
-from app.models.match import MatchStatus, RoundType
-from app.models.tournament import TournamentMode, TournamentStatus
+from app.models.match import Match, MatchStatus, RoundType, Visit
+from app.models.special_event import SpecialEvent
+from app.models.tournament import Tournament, TournamentMode, TournamentPlayer, TournamentStatus
 from app.repositories.match_repo import (
     create_match,
     list_matches_by_tournament,
 )
+from app.repositories.special_event_repo import list_events_by_visit
+from app.repositories.visit_repo import list_visits_by_match
 from app.repositories.player_repo import get_player_by_id
 from app.repositories.tournament_player_repo import (
     add_player_to_tournament,
@@ -21,7 +24,9 @@ from app.repositories.tournament_player_repo import (
 )
 from app.repositories.tournament_repo import (
     create_tournament,
+    delete_tournament,
     get_tournament_by_id,
+    list_all_tournaments,
     update_tournament_status,
 )
 from app.schemas.match import MatchRead
@@ -33,6 +38,7 @@ from app.services.vorrunde import (
     generate_fixed_draw,
     generate_swiss_round,
     is_doubles_mode,
+    target_matches_per_player,
 )
 from app.websocket import manager
 
@@ -50,6 +56,7 @@ KO_BASE_SCORE = 501
 class TournamentCreateRequest(BaseModel):
     player_ids: list[int] = Field(..., min_length=9, max_length=13)
     mode: TournamentMode = TournamentMode.swiss
+    name: str | None = None
 
 
 class TournamentDetailRead(BaseModel):
@@ -67,6 +74,8 @@ class StandingEntry(BaseModel):
     bonus_points: int
     avg_score: float
     total_points: float
+    wins: int
+    games_played: int
 
 
 class QualifiedPlayerRead(BaseModel):
@@ -140,6 +149,113 @@ async def _get_tournament_or_404(db: AsyncSession, tournament_id: int):
 # ---------------------------------------------------------------------------
 
 
+@router.get("", response_model=list[TournamentRead])
+async def list_tournaments(
+    db: AsyncSession = Depends(get_db),
+) -> list[TournamentRead]:
+    tournaments = await list_all_tournaments(db)
+    return [TournamentRead.model_validate(t) for t in tournaments]
+
+
+@router.delete("/{tournament_id}", status_code=204)
+async def delete_tournament_endpoint(
+    tournament_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    await _get_tournament_or_404(db, tournament_id)
+    await delete_tournament(db, tournament_id)
+    await db.commit()
+
+
+@router.post("/{tournament_id}/clone", response_model=TournamentRead, status_code=201)
+async def clone_tournament(
+    tournament_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> TournamentRead:
+    """Deep-copy a tournament including all matches, visits, special events, and standings."""
+    original = await _get_tournament_or_404(db, tournament_id)
+    tp_rows = await list_tournament_players(db, tournament_id)
+
+    original_name = original.name or f"Turnier {tournament_id}"
+    new_name = f"{original_name} - Kopie"
+
+    # 1. Tournament (preserve status so the clone is an exact snapshot)
+    new_tournament = Tournament(
+        player_count=original.player_count,
+        mode=original.mode,
+        status=original.status,
+        name=new_name,
+    )
+    db.add(new_tournament)
+    await db.flush()
+
+    # 2. TournamentPlayer rows — preserve reg_points, bonus_points, avg_score
+    for tp in tp_rows:
+        new_tp = TournamentPlayer(
+            tournament_id=new_tournament.id,
+            player_id=tp.player_id,
+            reg_points=tp.reg_points,
+            bonus_points=tp.bonus_points,
+            avg_score=tp.avg_score,
+        )
+        db.add(new_tp)
+    await db.flush()
+
+    # 3. Matches — preserve all fields including status / winner / starting player
+    orig_matches = await list_matches_by_tournament(db, tournament_id)
+    for orig_match in orig_matches:
+        new_match = Match(
+            tournament_id=new_tournament.id,
+            round_type=orig_match.round_type,
+            round_number=orig_match.round_number,
+            player1_id=orig_match.player1_id,
+            player2_id=orig_match.player2_id,
+            player3_id=orig_match.player3_id,
+            player4_id=orig_match.player4_id,
+            starting_score_p1=orig_match.starting_score_p1,
+            starting_score_p2=orig_match.starting_score_p2,
+            winner_id=orig_match.winner_id,
+            starting_player_id=orig_match.starting_player_id,
+            second_player_id=orig_match.second_player_id,
+            status=orig_match.status,
+        )
+        db.add(new_match)
+        await db.flush()
+
+        # 4. Visits for this match
+        orig_visits = await list_visits_by_match(db, orig_match.id)
+        for orig_visit in orig_visits:
+            new_visit = Visit(
+                match_id=new_match.id,
+                player_id=orig_visit.player_id,
+                visit_number=orig_visit.visit_number,
+                dart1=orig_visit.dart1,
+                dart2=orig_visit.dart2,
+                dart3=orig_visit.dart3,
+                total=orig_visit.total,
+                is_bust=orig_visit.is_bust,
+            )
+            db.add(new_visit)
+            await db.flush()
+
+            # 5. Special events for this visit
+            orig_events = await list_events_by_visit(db, orig_visit.id)
+            for orig_event in orig_events:
+                new_event = SpecialEvent(
+                    visit_id=new_visit.id,
+                    player_id=orig_event.player_id,
+                    event_type=orig_event.event_type,
+                    bonus_value=orig_event.bonus_value,
+                    count=orig_event.count,
+                )
+                db.add(new_event)
+            await db.flush()
+
+    await db.commit()
+    await db.refresh(new_tournament)
+    return TournamentRead.model_validate(new_tournament)
+
+
 @router.post("", response_model=TournamentRead, status_code=201)
 async def create_new_tournament(
     body: TournamentCreateRequest,
@@ -156,7 +272,7 @@ async def create_new_tournament(
         raise bad_request("Duplicate player IDs in request.", "duplicate_player_ids")
 
     tournament = await create_tournament(
-        db, player_count=len(body.player_ids), mode=body.mode
+        db, player_count=len(body.player_ids), mode=body.mode, name=body.name
     )
     for pid in body.player_ids:
         await add_player_to_tournament(db, tournament_id=tournament.id, player_id=pid)
@@ -379,6 +495,45 @@ async def start_next_swiss_round(
     doubles = is_doubles_mode(len(player_ids))
     base_score = VORRUNDE_BASE_SCORE
 
+    # If all target Vorrunde rounds are done, start the KO phase instead
+    if current_round >= target_matches_per_player(len(player_ids)):
+        from app.services.ko import generate_ko_bracket
+
+        player_standings_ko: list[PlayerStanding] = []
+        champ_counts_ko: dict[int, int] = {}
+        for tp in tp_rows:
+            p = await get_player_by_id(db, tp.player_id)
+            champ_counts_ko[tp.player_id] = p.championship_count if p else 0
+            player_standings_ko.append(
+                PlayerStanding(
+                    player_id=tp.player_id,
+                    reg_points=tp.reg_points,
+                    bonus_points=tp.bonus_points,
+                    total_score=round(tp.avg_score * 100),
+                    total_visits=100 if tp.avg_score > 0 else 0,
+                )
+            )
+
+        bracket = generate_ko_bracket(player_standings_ko, champ_counts_ko)
+        for mu in bracket.qf_matches:
+            await create_match(
+                db,
+                tournament_id=tournament_id,
+                round_type=RoundType.ko,
+                round_number=1,
+                player1_id=mu.player1_id,
+                player2_id=mu.player2_id,
+                starting_score_p1=mu.starting_score_p1,
+                starting_score_p2=mu.starting_score_p2,
+            )
+        await update_tournament_status(db, tournament_id, TournamentStatus.ko)
+        await db.commit()
+        await manager.broadcast_tournament(
+            tournament_id,
+            {"type": "bracket_update", "data": {"tournament_id": tournament_id}},
+        )
+        return []
+
     pairings = generate_swiss_round(state)
 
     champ_counts: dict[int, int] = {}
@@ -450,6 +605,28 @@ async def get_standings(
     await _get_tournament_or_404(db, tournament_id)
     tp_rows = await list_tournament_players(db, tournament_id)
 
+    # Compute wins and games_played from finished Vorrunde matches
+    all_matches = await list_matches_by_tournament(db, tournament_id)
+    finished_vorrunde = [
+        m for m in all_matches
+        if m.round_type == RoundType.vorrunde and m.status == MatchStatus.finished
+    ]
+
+    wins_map: dict[int, int] = {tp.player_id: 0 for tp in tp_rows}
+    games_map: dict[int, int] = {tp.player_id: 0 for tp in tp_rows}
+
+    for m in finished_vorrunde:
+        team1 = [m.player1_id] + ([m.player3_id] if m.player3_id is not None else [])
+        team2 = [m.player2_id] + ([m.player4_id] if m.player4_id is not None else [])
+        for pid in team1 + team2:
+            if pid in games_map:
+                games_map[pid] += 1
+        if m.winner_id is not None:
+            winning_team = team1 if m.winner_id in team1 else team2
+            for pid in winning_team:
+                if pid in wins_map:
+                    wins_map[pid] += 1
+
     standings = []
     for tp in tp_rows:
         standings.append(
@@ -463,9 +640,13 @@ async def get_standings(
         )
 
     standings.sort(
-        key=lambda s: (s.reg_points + s.avg_bonus, s.bonus_points),
+        key=lambda s: s.reg_points + s.avg_bonus,
         reverse=True,
     )
+    # Ranks 7+ are determined by bonus points (qualification via bonus)
+    top6 = standings[:6]
+    rest = sorted(standings[6:], key=lambda s: s.bonus_points, reverse=True)
+    standings = top6 + rest
 
     return [
         StandingEntry(
@@ -475,6 +656,8 @@ async def get_standings(
             bonus_points=s.bonus_points,
             avg_score=s.avg_score,
             total_points=s.reg_points + s.avg_bonus,
+            wins=wins_map.get(s.player_id, 0),
+            games_played=games_map.get(s.player_id, 0),
         )
         for idx, s in enumerate(standings)
     ]
@@ -566,11 +749,25 @@ async def start_ko_phase(
         )
         ko_matches.append(match)
 
-    # Non-qualifiers → Lightning Round pool (no matches yet; scheduled after QF)
+    # Non-qualifiers → create first Lightning Round matches immediately
+    from app.services.lightning import (
+        create_lightning_state,
+        generate_lightning_round,
+        persist_lightning_match_records,
+    )
+
     qualified_ids = {q.player_id for q in bracket.seeding}
     lightning_ids = [
         tp.player_id for tp in tp_rows if tp.player_id not in qualified_ids
     ]
+
+    if lightning_ids:
+        lightning_state = create_lightning_state(lightning_ids)
+        lightning_state = generate_lightning_round(lightning_state)
+        if lightning_state.rounds:
+            await persist_lightning_match_records(
+                db, tournament_id, lightning_state.rounds[0].matches
+            )
 
     await update_tournament_status(db, tournament_id, TournamentStatus.ko)
     await db.commit()

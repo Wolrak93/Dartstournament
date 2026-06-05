@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useTournament } from '../contexts/TournamentContext'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { getLightning, getPlayers } from '../api/client'
+import { getLightning, getPlayers, playerPhotoUrl } from '../api/client'
 import type { LightningMatchRead, Player } from '../api/types'
 import NavBar from '../components/NavBar'
 import './overview.css'
@@ -101,12 +101,35 @@ export default function LightningScreen() {
                     isFinished && match.winner_id !== null
                       ? playerName(match.winner_id, playerMap)
                       : null
+                  const p1 = playerMap[match.player1_id]
+                  const p2 = playerMap[match.player2_id]
                   return (
                     <li key={match.match_id} className="lightning-item">
-                      <span className="lightning-players">
-                        {playerName(match.player1_id, playerMap)} vs{' '}
-                        {playerName(match.player2_id, playerMap)}
-                      </span>
+                      <div className="lightning-player">
+                        {p1?.photo_path != null && (
+                          <img
+                            className="lightning-player-photo"
+                            src={playerPhotoUrl(p1.photo_path)}
+                            alt={playerName(match.player1_id, playerMap)}
+                          />
+                        )}
+                        <span className="lightning-player-name">
+                          {playerName(match.player1_id, playerMap)}
+                        </span>
+                      </div>
+                      <span className="lightning-vs">vs</span>
+                      <div className="lightning-player">
+                        {p2?.photo_path != null && (
+                          <img
+                            className="lightning-player-photo"
+                            src={playerPhotoUrl(p2.photo_path)}
+                            alt={playerName(match.player2_id, playerMap)}
+                          />
+                        )}
+                        <span className="lightning-player-name">
+                          {playerName(match.player2_id, playerMap)}
+                        </span>
+                      </div>
                       <span className={`lightning-status lightning-status--${match.status}`}>
                         {STATUS_LABELS[match.status] ?? match.status}
                       </span>

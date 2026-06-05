@@ -238,18 +238,18 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/frontend-audio`
 
 ### Audio Manager
-- [ ] Preload MP3 files from `user_input/sound/` on app start
+- [x] Preload MP3 files from `user_input/sound/` on app start
       - Score files: `0.mp3` through `180.mp3` (verify available filenames)
       - Bust sound: if a bust MP3 exists, play on bust; otherwise skip
-- [ ] `playScore(total: number)` — plays matching MP3 after visit confirmed
-- [ ] `playBust()` — plays bust sound if available (`0.mp3`)
-- [ ] No overlap: cancel any currently playing sound before starting new one
-- [ ] Graceful fallback: if file missing, log warning and continue silently
-- [ ] Hook `useAudio()` for use in Score Entry screen
+- [x] `playScore(total: number)` — plays matching MP3 after visit confirmed
+- [x] `playBust()` — plays bust sound if available (`0.mp3`)
+- [x] No overlap: cancel any currently playing sound before starting new one
+- [x] Graceful fallback: if file missing, log warning and continue silently
+- [x] Hook `useAudio()` for use in Score Entry screen
 
 ### Tests
-- [ ] `playScore(180)` calls correct audio file
-- [ ] Overlap: second call cancels first
+- [x] `playScore(180)` calls correct audio file
+- [x] Overlap: second call cancels first
 
 ---
 

@@ -497,8 +497,11 @@ def _parse_checkout_path(
     """
     path_str = re.sub(r"\s*:D\s*", "", path_str).strip()
 
-    if not path_str or path_str == "No Finish":
+    if not path_str:
         return None
+
+    if path_str == "No Finish":
+        return CheckoutSuggestion(darts=[], is_finish=False, leave=-1, text="No Finish")
 
     # Setup shot hint: "No Finish (X)"
     m = re.match(r"^No Finish \((.+)\)$", path_str)
@@ -547,25 +550,25 @@ def _load_double_out_table() -> dict[int, tuple[str, str, str]]:
 _DOUBLE_OUT_TABLE: dict[int, tuple[str, str, str]] = _load_double_out_table()
 
 
-def _build_single_out_1dart() -> dict[int, str]:
-    """Build a mapping of scores achievable in exactly 1 dart (Single-Out).
+def _load_single_out_table() -> dict[int, tuple[str, str, str]]:
+    """Load the Single-Out checkout table from JSON.
 
-    Priority: single (1–20) > Bull (25) > Bullseye (50) > triple > double.
+    Returns {score: (path_3dart, path_2dart, path_1dart)}.
+    Each path is a raw string from the lookup table (e.g. "T20 T20").
     """
-    result: dict[int, str] = {}
-    candidates: list[tuple[int, str]] = (
-        [(n, str(n)) for n in range(1, 21)]
-        + [(25, "Bull"), (50, "Bullseye")]
-        + [(n * 3, f"T{n}") for n in range(1, 21)]
-        + [(n * 2, f"D{n}") for n in range(1, 21)]
-    )
-    for score, label in candidates:
-        if score not in result:
-            result[score] = label
-    return result
+    data_file = _DATA_DIR / "single_out_checkouts.json"
+    with data_file.open(encoding="utf-8") as f:
+        entries = json.load(f)
+    table: dict[int, tuple[str, str, str]] = {}
+    for entry in entries:
+        score = int(entry[3])
+        if score >= 1:
+            table[score] = (str(entry[0]), str(entry[1]), str(entry[2]))
+    return table
 
 
-_SINGLE_OUT_1DART: dict[int, str] = _build_single_out_1dart()
+# Single-Out lookup: {score: (3-dart path, 2-dart path, 1-dart path)}
+_SINGLE_OUT_TABLE: dict[int, tuple[str, str, str]] = _load_single_out_table()
 
 
 # ---------------------------------------------------------------------------
@@ -671,7 +674,7 @@ def _high_score_double_out_setup(
 
 
 # ---------------------------------------------------------------------------
-# Single-Out checkout suggestion (scores 1–180)
+# Single-Out checkout suggestion (scores 1–230 via table)
 # ---------------------------------------------------------------------------
 
 
@@ -679,86 +682,16 @@ def _single_out_suggestion(
     remaining: int,
     darts_remaining: int,
 ) -> CheckoutSuggestion | None:
-    """Single-Out checkout suggestion (any field can finish the leg)."""
-    if remaining < 1:
+    """Single-Out checkout suggestion for remaining score (table lookup)."""
+    if remaining < 1 or remaining > 230:
         return None
 
-    darts_remaining = min(3, max(1, darts_remaining))
-
-    # 1-dart finish always available if score is in the 1-dart table
-    if remaining in _SINGLE_OUT_1DART:
-        label = _SINGLE_OUT_1DART[remaining]
-        return CheckoutSuggestion(darts=[label], is_finish=True, leave=0, text=label)
-
-    if darts_remaining == 1:
-        # Can't finish in 1 dart — suggest a setup shot that leaves a 1-dart finish
-        for score in _ALL_SCORES_DESC:
-            leave = remaining - score
-            if leave < 1:
-                continue
-            if leave in _SINGLE_OUT_1DART:
-                d = _dart_label(score)
-                return CheckoutSuggestion(darts=[d], is_finish=False, leave=leave, text=d)
-        # Fallback: reduce by as much as possible
-        for score in _ALL_SCORES_DESC:
-            leave = remaining - score
-            if leave >= 1:
-                d = _dart_label(score)
-                return CheckoutSuggestion(darts=[d], is_finish=False, leave=leave, text=d)
+    entry = _SINGLE_OUT_TABLE.get(remaining)
+    if not entry:
         return None
-
-    if darts_remaining == 2:
-        # 2-dart finish: first dart + single-out 1-dart finish
-        for first in _ALL_SCORES_DESC:
-            remainder = remaining - first
-            if remainder <= 0:
-                continue
-            if remainder in _SINGLE_OUT_1DART:
-                darts = [_dart_label(first), _SINGLE_OUT_1DART[remainder]]
-                return CheckoutSuggestion(
-                    darts=darts,
-                    is_finish=True,
-                    leave=0,
-                    text=" ".join(darts),
-                )
-        # No 2-dart finish; show setup shot
-        sub = _single_out_suggestion(remaining, 1)
-        return sub
-
-    # darts_remaining == 3: find 3-dart finish (or fall back to 2-dart / 1-dart)
-    for first in _ALL_SCORES_DESC:
-        r1 = remaining - first
-        if r1 <= 0:
-            continue
-        if r1 in _SINGLE_OUT_1DART:
-            # 2-dart finish (still within 3-dart budget)
-            darts = [_dart_label(first), _SINGLE_OUT_1DART[r1]]
-            return CheckoutSuggestion(
-                darts=darts,
-                is_finish=True,
-                leave=0,
-                text=" ".join(darts),
-            )
-        for second in _ALL_SCORES_DESC:
-            r2 = r1 - second
-            if r2 <= 0:
-                continue
-            if r2 in _SINGLE_OUT_1DART:
-                darts = [
-                    _dart_label(first),
-                    _dart_label(second),
-                    _SINGLE_OUT_1DART[r2],
-                ]
-                return CheckoutSuggestion(
-                    darts=darts,
-                    is_finish=True,
-                    leave=0,
-                    text=" ".join(darts),
-                )
-
-    # No finish in ≤3 darts; show setup shot
-    sub = _single_out_suggestion(remaining, 1)
-    return sub
+    # entry index: 3-dart=0, 2-dart=1, 1-dart=2
+    dart_idx = 3 - min(3, max(1, darts_remaining))
+    return _parse_checkout_path(entry[dart_idx], remaining)
 
 
 # ---------------------------------------------------------------------------
@@ -785,7 +718,7 @@ def get_checkout_suggestion(
 
     Display range:
         Double-Out: 2–230 (finish suggestions up to 170; setup shots 171–230)
-        Single-Out: 1–180
+        Single-Out: 1–230
     """
     darts_remaining = min(3, max(1, darts_remaining))
 

@@ -15,7 +15,15 @@ export interface Player {
 
 export interface Tournament {
   id: number
+  name: string | null
   created_at: string
+  player_count: number
+  mode: TournamentMode
+  status: TournamentStatus
+}
+
+export interface TournamentDetail {
+  id: number
   player_count: number
   mode: TournamentMode
   status: TournamentStatus
@@ -24,6 +32,7 @@ export interface Tournament {
 export interface TournamentCreateRequest {
   player_ids: number[]
   mode: TournamentMode
+  name?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -52,6 +61,8 @@ export interface StandingEntry {
   bonus_points: number
   avg_score: number
   total_points: number
+  wins: number
+  games_played: number
 }
 
 // ---------------------------------------------------------------------------

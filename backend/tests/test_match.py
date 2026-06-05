@@ -403,11 +403,11 @@ class TestCheckoutSuggestionsDoubleOut:
 
 class TestCheckoutSuggestionsSingleOut:
     def test_single_out_finish_on_single(self) -> None:
-        """20 = plain '20' in Single-Out (no double required)."""
+        """20 = S20 in Single-Out (table lookup normalises bare integers to S-prefix)."""
         s = get_checkout_suggestion(20, single_out=True)
         assert s is not None
         assert s.is_finish is True
-        assert s.darts == ["20"]
+        assert s.darts == ["S20"]
 
     def test_single_out_finish_on_bull(self) -> None:
         """25 = Bull in Single-Out."""

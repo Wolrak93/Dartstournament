@@ -100,7 +100,25 @@ Phone-accessible view for players and spectators.
 - [ ] Performance check (latency, touch responsiveness)
 - [ ] Lessons-learned session
 
-### Cycle 6 (Optional) — Camera-Based Dart Detection
+### Cycle 6 — Personalised Checkout Profiles
+
+Generate player-specific optimal checkout suggestion tables via Monte Carlo simulation, driven by each player's manually configured throw profile. Players can update their profile at any time before or during the tournament; any change triggers an immediate recalculation.
+
+Player profile parameters:
+- Normal standard deviation (general aiming accuracy)
+- Standard deviation on strong fields (tighter spread when aiming at a preferred field)
+- List of strong fields (the fields where the reduced deviation applies)
+
+Tasks:
+- [ ] Player profile model: store the three parameters per player (normal σ, strong-field σ, strong-field list)
+- [ ] Profile UI: settings screen where each player can view and edit their own profile
+- [ ] Monte Carlo evaluator: for each score (1–230) and dart count (1–3), simulate N throws per candidate checkout path using the player's σ values and select the highest-probability finish
+- [ ] Profile generator: produce `checkouts_<player>.json` in the existing table format on every profile save
+- [ ] Backend: serve the correct personalised checkout table for the currently active player
+- [ ] Frontend: display personalised checkout suggestions on the score entry screen
+- [ ] Fallback: use the default single-out table if no profile exists for a player
+
+### Cycle 7 (Optional) — Camera-Based Dart Detection
 
 - [ ] Webcam integration
 - [ ] Computer vision: detect dart positions and calculate score

@@ -1,6 +1,7 @@
 import type {
   Player,
   Tournament,
+  TournamentDetail,
   TournamentCreateRequest,
   StandingEntry,
   MatchRead,
@@ -46,6 +47,14 @@ async function apiDelete<T>(path: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
+async function apiDeleteNoContent(path: string): Promise<void> {
+  const response = await fetch(`${API_BASE}${path}`, { method: 'DELETE' })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }))
+    throw new Error((err as { detail?: string }).detail ?? response.statusText)
+  }
+}
+
 async function apiPost<T, B = unknown>(path: string, body?: B): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
@@ -72,8 +81,20 @@ export const getMatch = (matchId: number): Promise<MatchRead> =>
 // Tournament endpoints
 // ---------------------------------------------------------------------------
 
+export const getTournaments = (): Promise<Tournament[]> =>
+  apiGet<Tournament[]>('/tournaments')
+
+export const getTournamentById = (tournamentId: number): Promise<TournamentDetail> =>
+  apiGet<TournamentDetail>(`/tournaments/${tournamentId}`)
+
+export const startKOPhase = (tournamentId: number): Promise<KOBracketResponse> =>
+  apiPost<KOBracketResponse>(`/tournaments/${tournamentId}/ko/start`)
+
 export const createTournament = (body: TournamentCreateRequest): Promise<Tournament> =>
   apiPost<Tournament, TournamentCreateRequest>('/tournaments', body)
+
+export const cloneTournament = (tournamentId: number): Promise<Tournament> =>
+  apiPost<Tournament>(`/tournaments/${tournamentId}/clone`)
 
 export const startTournament = (tournamentId: number): Promise<unknown> =>
   apiPost<unknown>(`/tournaments/${tournamentId}/start`)
@@ -113,3 +134,6 @@ export const getMatchVisits = (matchId: number): Promise<VisitHistoryItem[]> =>
 
 export const undoLastVisit = (matchId: number): Promise<{ undone_visit_id: number; match_id: number }> =>
   apiDelete(`/matches/${matchId}/visits/last`)
+
+export const deleteTournament = (tournamentId: number): Promise<void> =>
+  apiDeleteNoContent(`/tournaments/${tournamentId}`)

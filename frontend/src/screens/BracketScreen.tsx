@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useTournament } from '../contexts/TournamentContext'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { getKOBracket, getPlayers } from '../api/client'
+import { getKOBracket, getPlayers, playerPhotoUrl } from '../api/client'
 import type { KOBracketResponse, KOMatchupRead, Player } from '../api/types'
 import NavBar from '../components/NavBar'
 import './overview.css'
@@ -17,21 +17,46 @@ interface BracketMatchProps {
   playerMap: Record<number, Player>
 }
 
+function BracketPlayer({
+  playerId,
+  isWinner,
+  playerMap,
+}: {
+  playerId: number
+  isWinner: boolean
+  playerMap: Record<number, Player>
+}) {
+  const player = playerMap[playerId]
+  const name = resolvePlayerName(playerId, playerMap)
+  return (
+    <div className={`bracket-player${isWinner ? ' bracket-player--winner' : ''}`}>
+      {player?.photo_path != null && (
+        <img
+          className="bracket-player-photo"
+          src={playerPhotoUrl(player.photo_path)}
+          alt={name}
+        />
+      )}
+      <span className="bracket-player-name">{name}</span>
+    </div>
+  )
+}
+
 function BracketMatch({ match, playerMap }: BracketMatchProps) {
   const isFinished = match.status === 'finished'
   return (
     <div className="bracket-match" data-testid="bracket-match">
-      <div
-        className={`bracket-player${isFinished && match.winner_id === match.player1_id ? ' bracket-player--winner' : ''}`}
-      >
-        {resolvePlayerName(match.player1_id, playerMap)}
-      </div>
+      <BracketPlayer
+        playerId={match.player1_id}
+        isWinner={isFinished && match.winner_id === match.player1_id}
+        playerMap={playerMap}
+      />
       <div className="bracket-vs">vs</div>
-      <div
-        className={`bracket-player${isFinished && match.winner_id === match.player2_id ? ' bracket-player--winner' : ''}`}
-      >
-        {resolvePlayerName(match.player2_id, playerMap)}
-      </div>
+      <BracketPlayer
+        playerId={match.player2_id}
+        isWinner={isFinished && match.winner_id === match.player2_id}
+        playerMap={playerMap}
+      />
     </div>
   )
 }
@@ -51,7 +76,6 @@ export default function BracketScreen() {
   const [bracket, setBracket] = useState<KOBracketResponse | null>(null)
   const [playerMap, setPlayerMap] = useState<Record<number, Player>>({})
   const [error, setError] = useState<string | null>(null)
-  const [noBracket, setNoBracket] = useState(false)
 
   useEffect(() => {
     getPlayers()
@@ -68,12 +92,9 @@ export default function BracketScreen() {
   const loadBracket = useCallback(() => {
     if (tournamentId === null) return
     getKOBracket(tournamentId)
-      .then(data => {
-        setBracket(data)
-        setNoBracket(data.quarter_finals.length === 0)
-      })
+      .then(data => setBracket(data))
       .catch(() => {
-        setNoBracket(true)
+        // Bracket not yet started — bracket stays null, all slots render as TBD
       })
   }, [tournamentId])
 
@@ -119,48 +140,44 @@ export default function BracketScreen() {
               {error}
             </p>
           )}
-          {noBracket ? (
-            <p className="overview-empty">Das KO-Bracket beginnt nach der Vorrunde.</p>
-          ) : (
-            <div className="bracket">
-              <div className="bracket-round">
-                <h2 className="bracket-round-label">Viertelfinale</h2>
-                {qfSlots.map((match, i) =>
-                  match !== null ? (
-                    <BracketMatch key={`match-${match.match_id}`} match={match} playerMap={playerMap} />
-                  ) : (
-                    <TbdMatch key={`tbd-qf-${i}`} label="QF" />
-                  ),
-                )}
-              </div>
-              <div className="bracket-connector" aria-hidden="true" />
-              <div className="bracket-round">
-                <h2 className="bracket-round-label">Halbfinale</h2>
-                {sfSlots.map((match, i) =>
-                  match !== null ? (
-                    <BracketMatch key={`match-${match.match_id}`} match={match} playerMap={playerMap} />
-                  ) : (
-                    <TbdMatch key={`tbd-sf-${i}`} label="SF" />
-                  ),
-                )}
-              </div>
-              <div className="bracket-connector" aria-hidden="true" />
-              <div className="bracket-round bracket-round--finals">
-                <h2 className="bracket-round-label">Finale</h2>
-                {bracket?.final !== null && bracket?.final !== undefined ? (
-                  <BracketMatch match={bracket.final} playerMap={playerMap} />
+          <div className="bracket">
+            <div className="bracket-round">
+              <h2 className="bracket-round-label">Viertelfinale</h2>
+              {qfSlots.map((match, i) =>
+                match !== null ? (
+                  <BracketMatch key={`match-${match.match_id}`} match={match} playerMap={playerMap} />
                 ) : (
-                  <TbdMatch label="Final" />
-                )}
-                <h2 className="bracket-round-label bracket-round-label--third">3. Platz</h2>
-                {bracket?.third_place !== null && bracket?.third_place !== undefined ? (
-                  <BracketMatch match={bracket.third_place} playerMap={playerMap} />
-                ) : (
-                  <TbdMatch label="3rd" />
-                )}
-              </div>
+                  <TbdMatch key={`tbd-qf-${i}`} label="QF" />
+                ),
+              )}
             </div>
-          )}
+            <div className="bracket-connector" aria-hidden="true" />
+            <div className="bracket-round">
+              <h2 className="bracket-round-label">Halbfinale</h2>
+              {sfSlots.map((match, i) =>
+                match !== null ? (
+                  <BracketMatch key={`match-${match.match_id}`} match={match} playerMap={playerMap} />
+                ) : (
+                  <TbdMatch key={`tbd-sf-${i}`} label="SF" />
+                ),
+              )}
+            </div>
+            <div className="bracket-connector" aria-hidden="true" />
+            <div className="bracket-round bracket-round--finals">
+              <h2 className="bracket-round-label">Finale</h2>
+              {bracket?.final !== null && bracket?.final !== undefined ? (
+                <BracketMatch match={bracket.final} playerMap={playerMap} />
+              ) : (
+                <TbdMatch label="Final" />
+              )}
+              <h2 className="bracket-round-label bracket-round-label--third">3. Platz</h2>
+              {bracket?.third_place !== null && bracket?.third_place !== undefined ? (
+                <BracketMatch match={bracket.third_place} playerMap={playerMap} />
+              ) : (
+                <TbdMatch label="3rd" />
+              )}
+            </div>
+          </div>
         </section>
       </div>
     </div>

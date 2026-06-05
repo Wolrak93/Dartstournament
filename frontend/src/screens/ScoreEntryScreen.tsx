@@ -649,9 +649,12 @@ export default function ScoreEntryScreen() {
               <span className="score-last-visit">({matchState.remaining_p1 - pendingDartTotal})</span>
             )}
           </div>
-          {isTeam1Active && !matchFinished && activeDynamicCheckout() != null && (
-            <div className="score-checkout">
-              {activeDynamicCheckout()!.text}
+          {!matchFinished && (
+            <div
+              className="score-checkout"
+              style={{ visibility: isTeam1Active && activeDynamicCheckout() != null ? 'visible' : 'hidden' }}
+            >
+              {activeDynamicCheckout()?.text ?? '\u00A0'}
             </div>
           )}
         </div>
@@ -687,9 +690,12 @@ export default function ScoreEntryScreen() {
               <span className="score-last-visit">({matchState.remaining_p2 - pendingDartTotal})</span>
             )}
           </div>
-          {!isTeam1Active && activePlayerId != null && !matchFinished && activeDynamicCheckout() != null && (
-            <div className="score-checkout">
-              {activeDynamicCheckout()!.text}
+          {!matchFinished && (
+            <div
+              className="score-checkout"
+              style={{ visibility: !isTeam1Active && activePlayerId != null && activeDynamicCheckout() != null ? 'visible' : 'hidden' }}
+            >
+              {activeDynamicCheckout()?.text ?? '\u00A0'}
             </div>
           )}
         </div>

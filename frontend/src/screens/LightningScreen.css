@@ -30,11 +30,38 @@
   border: 1px solid #374151;
 }
 
-.lightning-players {
-  flex: 1;
+.lightning-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lightning-player-photo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #374151;
+  flex-shrink: 0;
+}
+
+.lightning-player-name {
   font-size: 1rem;
   font-weight: 600;
   color: #e5e7eb;
+}
+
+.lightning-vs {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+/* push status + winner to the right */
+.lightning-item .lightning-status,
+.lightning-item .lightning-winner {
+  margin-left: auto;
 }
 
 .lightning-status {

@@ -2,8 +2,15 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTournament } from '../contexts/TournamentContext'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { getStandings, getPlayers, triggerNextRound, getNextMatches } from '../api/client'
-import type { StandingEntry, Player } from '../api/types'
+import {
+  getStandings,
+  getPlayers,
+  triggerNextRound,
+  getNextMatches,
+  getTournamentById,
+  startKOPhase,
+} from '../api/client'
+import type { StandingEntry, Player, TournamentMode } from '../api/types'
 import NavBar from '../components/NavBar'
 import './overview.css'
 import './StandingsScreen.css'
@@ -16,6 +23,7 @@ export default function StandingsScreen() {
   const [error, setError] = useState<string | null>(null)
   const [nextRoundLoading, setNextRoundLoading] = useState(false)
   const [hasPendingMatches, setHasPendingMatches] = useState(true)
+  const [tournamentMode, setTournamentMode] = useState<TournamentMode | null>(null)
 
   useEffect(() => {
     getPlayers()
@@ -28,6 +36,13 @@ export default function StandingsScreen() {
       })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Fehler beim Laden'))
   }, [])
+
+  useEffect(() => {
+    if (tournamentId === null) return
+    getTournamentById(tournamentId)
+      .then(t => setTournamentMode(t.mode))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Fehler beim Laden'))
+  }, [tournamentId])
 
   const loadPendingMatches = useCallback(() => {
     if (tournamentId === null) return
@@ -64,11 +79,27 @@ export default function StandingsScreen() {
     setNextRoundLoading(true)
     setError(null)
     triggerNextRound(tournamentId)
-      .then(() => {
-        navigate('/next-matches')
+      .then((matches) => {
+        if (matches.length === 0) {
+          navigate('/bracket')
+        } else {
+          navigate('/next-matches')
+        }
       })
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : 'Fehler beim Erstellen der nächsten Runde'),
+      )
+      .finally(() => setNextRoundLoading(false))
+  }, [tournamentId, navigate])
+
+  const handleStartKO = useCallback(() => {
+    if (tournamentId === null) return
+    setNextRoundLoading(true)
+    setError(null)
+    startKOPhase(tournamentId)
+      .then(() => navigate('/bracket'))
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : 'Fehler beim Starten der KO-Runde'),
       )
       .finally(() => setNextRoundLoading(false))
   }, [tournamentId, navigate])
@@ -98,6 +129,8 @@ export default function StandingsScreen() {
               <tr>
                 <th>#</th>
                 <th>Spieler</th>
+                <th>Siege</th>
+                <th>Spiele</th>
                 <th>Punkte</th>
                 <th>Bonus</th>
                 <th>Average</th>
@@ -114,6 +147,8 @@ export default function StandingsScreen() {
                     <td className="standings-name">
                       {playerMap[entry.player_id]?.name ?? `Spieler ${entry.player_id}`}
                     </td>
+                    <td>{entry.wins}</td>
+                    <td>{entry.games_played}</td>
                     <td>{entry.total_points.toFixed(4)}</td>
                     <td>{entry.bonus_points}</td>
                     <td>{entry.avg_score.toFixed(2)}</td>
@@ -124,18 +159,36 @@ export default function StandingsScreen() {
           </table>
           {standings.length > 0 && (
             <div className="standings-legend">
-              <span className="legend-ko">■ Top 6: KO-Qualifikation</span>
-              <span className="legend-wildcard">■ Platz 7–8: Wildcard</span>
+              <span className="legend-ko">■ Top 6: Qualifikation durch Punkte</span>
+              <span className="legend-wildcard">■ Platz 7–8: Qualifikation durch Bonuspunkte</span>
             </div>
           )}
-          {!hasPendingMatches && (
+          {!hasPendingMatches && tournamentMode === 'fixed' && (
+            <div className="standings-actions">
+              <button
+                className="btn-next-round"
+                onClick={handleStartKO}
+                disabled={nextRoundLoading}
+              >
+                {nextRoundLoading ? 'Wird geladen…' : 'KO-Runde & Nebenrunde starten'}
+              </button>
+            </div>
+          )}
+          {!hasPendingMatches && tournamentMode === 'swiss' && (
             <div className="standings-actions">
               <button
                 className="btn-next-round"
                 onClick={handleNextRound}
                 disabled={nextRoundLoading}
               >
-                {nextRoundLoading ? 'Wird geladen…' : 'Nächste Runde starten'}
+                {nextRoundLoading ? 'Wird geladen…' : 'Nächste Swiss Runde starten'}
+              </button>
+              <button
+                className="btn-next-round"
+                onClick={handleStartKO}
+                disabled={nextRoundLoading}
+              >
+                {nextRoundLoading ? 'Wird geladen…' : 'KO-Runde & Nebenrunde starten'}
               </button>
             </div>
           )}

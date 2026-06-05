@@ -78,6 +78,8 @@
 
 .standings-actions {
   margin-top: 1.25rem;
+  display: flex;
+  gap: 1rem;
 }
 
 .btn-next-round {
