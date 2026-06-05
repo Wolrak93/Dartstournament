@@ -2,6 +2,9 @@
 
 ## PROJECT CONTEXT
 
+PROJECT_TYPE:      private
+GITHUB_ACCOUNT:    Wolrak93 (SSH alias: github-privat)
+REMOTE:            git@github-privat:Wolrak93/Dartstournament.git
 LANGUAGE:          Python (backend), TypeScript (frontend)
 FRAMEWORK:         FastAPI + WebSockets (backend), React + Vite (frontend)
 PACKAGE_MANAGER:   uv (Python), npm (frontend)
