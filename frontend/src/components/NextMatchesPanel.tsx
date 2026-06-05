@@ -18,7 +18,13 @@ const ROUND_LABELS: Record<string, string> = {
 }
 
 function matchLink(match: MatchRead): string {
-  return match.status === 'in_progress' ? `/score/${match.id}` : `/bull-throw/${match.id}`
+  if (match.status === 'in_progress') return `/score/${match.id}`
+  if (
+    match.status === 'pending' &&
+    (match.round_type === 'ko' || match.round_type === 'lightning')
+  )
+    return `/walkon/${match.id}`
+  return `/bull-throw/${match.id}`
 }
 
 interface PlayerSlotProps {
