@@ -16,6 +16,7 @@ from app.routers import matches, players, tournaments, ws
 # Resolve user_input/pics relative to this file (backend/app/main.py → ../../user_input/pics)
 _PICS_DIR = Path(__file__).resolve().parent.parent.parent / "user_input" / "pics"
 _SOUND_DIR = Path(__file__).resolve().parent.parent.parent / "user_input" / "sound"
+_MUSIC_DIR = Path(__file__).resolve().parent.parent.parent / "user_input" / "music"
 
 
 @asynccontextmanager
@@ -38,6 +39,9 @@ if _PICS_DIR.exists():
 
 if _SOUND_DIR.exists():
     app.mount("/sounds", StaticFiles(directory=str(_SOUND_DIR)), name="sounds")
+
+if _MUSIC_DIR.exists():
+    app.mount("/music", StaticFiles(directory=str(_MUSIC_DIR)), name="music")
 
 
 # ---------------------------------------------------------------------------

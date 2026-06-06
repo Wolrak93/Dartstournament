@@ -1,0 +1,42 @@
+{
+  "Philipp":  { 
+    "nickname": "CR7", 
+    "funFact": "Hat immer Kippen dabei", 
+    "bestPerformance": "3 times back to back champion (2023, 2024, 2025)" },
+  "Mike":     { 
+    "nickname": "Metthouse", 
+    "funFact": "laut", 
+    "bestPerformance": "?" },
+  "Henrik":   { 
+    "nickname": "way2sexy", 
+    "funFact": "spielt gerne in den Trikots Anderer", 
+    "bestPerformance": "4th Place (2024, 2025)" },
+  "Lars":     { 
+    "nickname": "Nordhornet", 
+    "funFact": "macht beste Protokol (schwöre)", 
+    "bestPerformance": "Quarter Finalist (2021, 2022, 2023, 2024)" },
+  "Joachim":  { 
+    "nickname": "Viking", 
+    "funFact": "hat schon alte Herren gespielt", 
+    "bestPerformance": "2 times back to back champion (2021, 2022)" },
+  "Jonas":    { 
+    "nickname": "Eagle Eye", 
+    "funFact": "bester Bogenschütze / Adlerauge", 
+    "bestPerformance": "Finalist (2024)" },
+  "Janni":    { 
+    "nickname": "Dart2Heart", 
+    "funFact": "1st & only tournament official 180", 
+    "bestPerformance": "Finalist (2023)" },
+  "Jens":     { 
+    "nickname": "La Bomba", 
+    "funFact": "fast so alt wie Heidi Klum (mehr alt)", 
+    "bestPerformance": "3rd Place (2022, 2025)" },
+  "Elina":    { 
+    "nickname": "Humpty Dumpty", 
+    "funFact": "Quarter Finalist (2023, 2025)", 
+    "bestPerformance": "hat Lars einmal so richtig zerstört" },
+  "Lena":     { 
+    "nickname": "Bibi Backsberg", 
+    "funFact": "nur für uns versetzte sie Gunda in der Sauna :(", 
+    "bestPerformance": "Vorrunde (2023, 2025)" }
+}
