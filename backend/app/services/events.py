@@ -168,26 +168,28 @@ def detect_events(
 
     # ------------------------------------------------------------------
     # Per-dart hit events (counted for each occurrence; bounce/RH excluded)
+    # Not awarded on a bust — only Bounce, Robin Hood, and Bust itself count.
     # ------------------------------------------------------------------
 
-    tripel_count = sum(1 for d in active if d.band == DartBand.TRIPLE)
-    if tripel_count:
-        _add(EventType.TRIPEL, tripel_count)
+    if not is_bust:
+        tripel_count = sum(1 for d in active if d.band == DartBand.TRIPLE)
+        if tripel_count:
+            _add(EventType.TRIPEL, tripel_count)
 
-    # Tripel 20 is a narrower subset of Tripel — both can fire for the same dart.
-    t20_count = sum(
-        1 for d in active if d.band == DartBand.TRIPLE and d.number == 20
-    )
-    if t20_count:
-        _add(EventType.TRIPEL_20, t20_count)
+        # Tripel 20 is a narrower subset of Tripel — both can fire for the same dart.
+        t20_count = sum(
+            1 for d in active if d.band == DartBand.TRIPLE and d.number == 20
+        )
+        if t20_count:
+            _add(EventType.TRIPEL_20, t20_count)
 
-    bull_count = sum(1 for d in active if d.band == DartBand.BULL)
-    if bull_count:
-        _add(EventType.BULL, bull_count)
+        bull_count = sum(1 for d in active if d.band == DartBand.BULL)
+        if bull_count:
+            _add(EventType.BULL, bull_count)
 
-    bullseye_count = sum(1 for d in active if d.band == DartBand.BULLSEYE)
-    if bullseye_count:
-        _add(EventType.BULLSEYE, bullseye_count)
+        bullseye_count = sum(1 for d in active if d.band == DartBand.BULLSEYE)
+        if bullseye_count:
+            _add(EventType.BULLSEYE, bullseye_count)
 
     # Bounce and Robin Hood include the actual flagged darts (all of darts list).
     bounce_count = sum(1 for d in darts if d.bounce)
@@ -231,30 +233,34 @@ def detect_events(
 
     # ------------------------------------------------------------------
     # Shanghai: exactly S + D + T of the same numbered field (1–20)
+    # Not awarded on a bust.
     # ------------------------------------------------------------------
 
-    numbered = [d for d in active if 1 <= d.number <= 20]
-    if len(numbered) == 3:
-        unique_numbers = {d.number for d in numbered}
-        if len(unique_numbers) == 1:
-            bands = {d.band for d in numbered}
-            if (
-                DartBand.SINGLE in bands
-                and DartBand.DOUBLE in bands
-                and DartBand.TRIPLE in bands
-            ):
-                _add(EventType.SHANGHAI)
+    if not is_bust:
+        numbered = [d for d in active if 1 <= d.number <= 20]
+        if len(numbered) == 3:
+            unique_numbers = {d.number for d in numbered}
+            if len(unique_numbers) == 1:
+                bands = {d.band for d in numbered}
+                if (
+                    DartBand.SINGLE in bands
+                    and DartBand.DOUBLE in bands
+                    and DartBand.TRIPLE in bands
+                ):
+                    _add(EventType.SHANGHAI)
 
     # ------------------------------------------------------------------
     # Gleiche Zahl: all 3 (non-miss) active darts on the same number.
     # Shanghai is a special case and both events fire simultaneously.
+    # Not awarded on a bust.
     # ------------------------------------------------------------------
 
-    non_miss = [d for d in active if d.number != 0]
-    if len(non_miss) == 3:
-        nums = [d.number for d in non_miss]
-        if nums[0] == nums[1] == nums[2]:
-            _add(EventType.GLEICHE_ZAHL)
+    if not is_bust:
+        non_miss = [d for d in active if d.number != 0]
+        if len(non_miss) == 3:
+            nums = [d.number for d in non_miss]
+            if nums[0] == nums[1] == nums[2]:
+                _add(EventType.GLEICHE_ZAHL)
 
     # ------------------------------------------------------------------
     # Bust

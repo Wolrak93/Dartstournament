@@ -1,0 +1,243 @@
+/* HomeScreen — tournament selection and creation */
+
+.home-screen {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.home-title {
+  font-size: 2.4rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+/* ----- New tournament button ----- */
+
+.home-new-btn {
+  padding: 16px 24px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  background: #6d28d9;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  align-self: center;
+  min-width: 260px;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+
+.home-new-btn:active {
+  background: #5b21b6;
+}
+
+/* ----- Error / empty states ----- */
+
+.home-error {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: #b91c1c;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.home-empty {
+  text-align: center;
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ----- Section heading ----- */
+
+.home-section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+/* ----- Tournament list ----- */
+
+.tournament-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tournament-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.tournament-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tournament-card__name {
+  font-size: 1rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournament-card__meta {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.tournament-card__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* ----- Status badge ----- */
+
+.status-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status-badge--pending {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.status-badge--vorrunde {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-badge--ko {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.status-badge--finished {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* ----- Card action buttons ----- */
+
+.tournament-card__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.card-btn {
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+
+.card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card-btn--primary {
+  background: #6d28d9;
+  color: #fff;
+  border: none;
+}
+
+.card-btn--primary:not(:disabled):active {
+  background: #5b21b6;
+}
+
+.card-btn--secondary {
+  background: #fff;
+  color: #6d28d9;
+  border: 2px solid #6d28d9;
+}
+
+.card-btn--secondary:not(:disabled):active {
+  background: #ede9fe;
+}
+
+.card-btn--danger {
+  background: #fff;
+  color: #b91c1c;
+  border: 2px solid #b91c1c;
+}
+
+.card-btn--danger:not(:disabled):active {
+  background: #fee2e2;
+}
+
+/* ----- Delete confirmation modal ----- */
+
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.delete-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.delete-modal__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.delete-modal__body {
+  font-size: 0.95rem;
+  color: #374151;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.delete-modal__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}

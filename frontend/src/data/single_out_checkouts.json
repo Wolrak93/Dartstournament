@@ -1,0 +1,403 @@
+[
+["", 		        "", 		        "", 		        "0"],
+["1", 		        "1", 	    	    "1", 		        "1"],
+["2", 		        "2",    		    "2", 		        "2"],
+["3", 		        "3", 	    	    "3", 		        "3"],
+["4", 		        "4", 	    	    "4", 		        "4"],
+["5", 		        "5", 	    	    "5", 	    	    "5"],
+["6", 		        "6", 	    	    "6", 		        "6"],
+["7", 	         	"7", 	    	    "7", 	    	    "7"],
+["8", 	         	"8", 	    	    "8", 		        "8"],
+["9", 	        	"9", 	    	    "9", 	    	    "9"],
+["10", 	        	"10", 	    	    "10", 	    	    "10"],
+["11", 	          	"11", 		        "11", 	    	    "11"],
+["12", 	           	"12", 	    	    "12", 	    	    "12"],
+["13", 	           	"13", 	    	    "13", 	    	    "13"],
+["14", 	    	    "14", 		        "14", 	    	    "14"],
+["15", 		        "15", 	    	    "15", 	    	    "15"],
+["16", 	    	    "16", 		        "16", 	    	    "16"],
+["17", 	    	    "17", 	    	    "17", 		        "17"],
+["18", 	    	    "18", 		        "18", 	    	    "18"],
+["19", 	    	    "19", 	    	    "19", 	    	    "19"],
+["20", 	    	    "20", 	    	    "20", 	    	    "20"],
+["T7", 	    	    "T7", 	    	    "T7", 	    	    "21"],
+["11 11",           "T6 4",             "D11",		        "22"],
+["T6 5", 		    "T7 2", 		    "No Finish (T6)",   "23"],
+["T8", 		        "T8", 		        "D12", 		        "24"],
+["B", 		        "B", 		        "B", 		        "25"],
+["T8 2", 		    "T8 2", 		    "D13", 		        "26"],
+["T9", 		        "T9", 	        	"T9", 		        "27"],
+["14 14", 		    "14 14", 		    "D14", 		        "28"],
+["T9 2", 		    "T9 2", 		    "No Finish (T9)", 	"29"],
+["T10", 		    "T10", 		        "D15", 		        "30"],
+["B 6", 		    "T9 4", 		    "No Finish (T9)", 	"31"],
+["T7 11", 		    "16 16", 		    "D16", 		        "32"],
+["T11", 		    "T7 12", 		    "T11", 		        "33"],
+["T7 13", 		    "17 17", 		    "D17", 		        "34"],
+["T7 14", 		    "T7 14", 		    "No Finish (T7)",   "35"],
+["T7 15", 		    "18 18", 		    "D18", 		        "36"],
+["T3 14 14",	    "T1 D17", 		    "No Finish (T3)", 	"37"],
+["19 19", 		    "19 19", 		    "D19", 		        "38"],
+["T7 18", 		    "19 20", 		    "T13", 		        "39"],
+["20 20", 		    "20 20", 		    "D20", 		        "40"],
+["T11 8", 		    "T8 17", 		    "No Finish (T11)", 	"41"],
+["T14", 		    "T14", 		        "T14", 		        "42"],
+["T14 1", 		    "B 18", 		    "No Finish (T14)",	"43"],
+["T14 2", 		    "T11 11", 		    "No Finish (T14)",	"44"],
+["T15", 		    "T15", 		        "T15", 		        "45"],
+["T14 4", 		    "T6 D14", 		    "No Finish (T14)",	"46"],
+["T14 5", 		    "T14 5", 		    "No Finish (T14)",	"47"],
+["T16", 		    "T16", 		        "T16", 		        "48"],
+["T14 7", 		    "T15 4", 		    "No Finish (T14)", 	"49"],
+["BE", 		        "T11 17", 		    "BE", 		        "50"],
+["T17", 		    "T17", 		        "T17", 		        "51"],
+["T14 10", 		    "T16 4", 		    "No Finish (T16)", 	"52"],
+["T11 20", 		    "T17 2", 		    "No Finish (T11)", 	"53"],
+["T18", 		    "T18", 		        "T18", 		        "54"],
+["T18 1", 		    "T15 10", 		    "No Finish (T7)", 	"55"],
+["T16 8", 		    "T8 D16", 		    "No Finish (T14)", 	"56"],
+["T19", 		    "T19", 		        "T19", 		        "57"],
+["T18 4", 		    "T18 4", 		    "No Finish (T7)", 	"58"],
+["T19 2", 		    "T3 BE", 		    "No Finish (T14)", 	"59"],
+["T20", 		    "T20", 		        "T20", 		        "60"],
+["T7 20 20", 		"T7 D20", 		    "No Finish (T7)", 	"61"],
+
+["T11 T9 2", 		"11 T17", 		"No Finish", 		"62"],
+
+["T20 3", 		"T20 3", 		"No Finish", 		"63"],
+
+["T20 4", 		"T20 4", 		"No Finish", 		"64"],
+
+["T20 5", 		"T20 5", 		"No Finish", 		"65"],
+
+["T20 6", 		"T20 6", 		"No Finish", 		"66"],
+
+["T20 7", 		"T20 7", 		"No Finish", 		"67"],
+
+["T20 8", 		"T20 8", 		"No Finish", 		"68"],
+
+["T20 9", 		"T20 9", 		"No Finish", 		"69"],
+
+["T20 10", 		"T20 10", 		"No Finish", 		"70"],
+
+["T20 11", 		"T20 11", 		"No Finish", 		"71"],
+
+["T20 12", 		"T20 12", 		"No Finish", 		"72"],
+
+["T20 13", 		"T20 13", 		"No Finish", 		"73"],
+
+["T20 14", 		"T20 14", 		"No Finish", 		"74"],
+
+["T20 15", 		"T20 15", 		"No Finish", 		"75"],
+
+["T20 16", 		"T20 16", 		"No Finish", 		"76"],
+
+["T20 17", 		"T20 17", 		"No Finish", 		"77"],
+
+["T20 18", 		"T20 18", 		"No Finish", 		"78"],
+
+["T20 19", 		"T20 19", 		"No Finish", 		"79"],
+
+["T20 20", 		"T20 20", 		"No Finish", 		"80"],
+
+["T20 T7", 		"T20 T7", 		"No Finish", 		"81"],
+
+["T19 B", 		"T19 B", 		"No Finish", 		"82"],
+
+["T11 BE", 		"T11 BE", 		"No Finish", 		"83"],
+
+["D17 BE", 		"D17 BE", 		"No Finish", 		"84"],
+
+["T20 B", 		"T20 B", 		"No Finish", 		"85"],
+
+["D18 BE", 		"D18 BE", 		"No Finish", 		"86"],
+
+["T20 T9", 		"T20 T9", 		"No Finish", 		"87"],
+
+["D19 BE", 		"D19 BE", 		"No Finish", 		"88"],
+
+["T13 BE", 		"T13 BE", 		"No Finish", 		"89"],
+
+["D20 BE", 		"D20 BE", 		"No Finish", 		"90"],
+
+["D20 T17", 		"D20 T17", 		"No Finish", 		"91"],
+
+["T14 BE", 		"T14 BE", 		"No Finish", 		"92"],
+
+["T20 T11", 		"T20 T11", 		"No Finish", 		"93"],
+
+["D20 T18", 		"D20 T18", 		"No Finish", 		"94"],
+
+["T15 BE", 		"T15 BE", 		"No Finish", 		"95"],
+
+["T20 T12", 		"T20 T12", 		"No Finish", 		"96"],
+
+["D20 T19", 		"D20 T19", 		"No Finish", 		"97"],
+
+["T16 BE", 		"T16 BE", 		"No Finish", 		"98"],
+
+["T20 T13", 		"T20 T13", 		"No Finish", 		"99"],
+
+["BE BE", 		"BE BE", 		"No Finish", 		"100"],
+
+["T17 BE", 		"T17 BE", 		"No Finish", 		"101"],
+
+["T20 T14", 		"T20 T14", 		"No Finish", 		"102"],
+
+["T20 T14 1", 		"No Finish (T20)", 		"No Finish", 		"103"],
+
+["T18 BE", 		"T18 BE", 		"No Finish", 		"104"],
+
+["T20 T15", 		"T20 T15", 		"No Finish", 		"105"],
+
+["T20 T15 1", 		"No Finish (T20)", 		"No Finish", 		"106"],
+
+["T19 BE", 		"T19 BE", 		"No Finish", 		"107"],
+
+["T20 T16", 		"T20 T16", 		"No Finish", 		"108"],
+
+["T20 T16 1", 		"No Finish (T20)", 		"No Finish", 		"109"],
+
+["T20 BE", 		"T20 BE", 		"No Finish", 		"110"],
+
+["T20 T17", 		"T20 T17", 		"No Finish", 		"111"],
+
+["T20 T17 1", 		"No Finish (T20)", 		"No Finish", 		"112"],
+
+["T20 T17 2", 		"No Finish (T20)", 		"No Finish", 		"113"],
+
+["T20 T18", 		"T20 T18", 		"No Finish", 		"114"],
+
+["T20 T18 1", 		"No Finish (T20)", 		"No Finish", 		"115"],
+
+["T20 T18 2", 		"No Finish (T20)", 		"No Finish", 		"116"],
+
+["T20 T19", 		"T20 T19", 		"No Finish", 		"117"],
+
+["T20 T19 1", 		"No Finish (T20)", 		"No Finish", 		"118"],
+
+["T20 T19 2", 		"No Finish (T20)", 		"No Finish", 		"119"],
+
+["T20 T20", 		"T20 T20", 		"No Finish", 		"120"],
+
+["T20 T20 1", 		"No Finish (T20)", 		"No Finish", 		"121"],
+
+["T20 T20 2", 		"No Finish (T20)", 		"No Finish", 		"122"],
+
+["T20 T20 3", 		"No Finish (T20)", 		"No Finish", 		"123"],
+
+["T20 T20 4", 		"No Finish (T20)", 		"No Finish", 		"124"],
+
+["T20 T20 5", 		"No Finish (T20)", 		"No Finish", 		"125"],
+
+["T20 T20 6", 		"No Finish (T20)", 		"No Finish", 		"126"],
+
+["T20 T20 7", 		"No Finish (T20)", 		"No Finish", 		"127"],
+
+["T20 T20 8", 		"No Finish (T20)", 		"No Finish", 		"128"],
+
+["T20 T20 9", 		"No Finish (T20)", 		"No Finish", 		"129"],
+
+["T20 T20 10", 		"No Finish (T20)", 		"No Finish", 		"130"],
+
+["T20 T20 11", 		"No Finish (T20)", 		"No Finish", 		"131"],
+
+["T20 T20 12", 		"No Finish (T20)", 		"No Finish", 		"132"],
+
+["T20 T20 13", 		"No Finish (T20)", 		"No Finish", 		"133"],
+
+["T20 T20 14", 		"No Finish (T20)", 		"No Finish", 		"134"],
+
+["T20 T20 15", 		"No Finish (T20)", 		"No Finish", 		"135"],
+
+["T20 T20 16", 		"No Finish (T20)", 		"No Finish", 		"136"],
+
+["T20 T20 17", 		"No Finish (T20)", 		"No Finish", 		"137"],
+
+["T20 T20 18", 		"No Finish (T20)", 		"No Finish", 		"138"],
+
+["T20 T20 19", 		"No Finish (T20)", 		"No Finish", 		"139"],
+
+["T20 T20 20", 		"No Finish (T20)", 		"No Finish", 		"140"],
+
+["T20 T20 T7", 		"No Finish (T20)", 		"No Finish", 		"141"],
+
+["T20 T19 B", 		"No Finish (T20)", 		"No Finish", 		"142"],
+
+["T20 T11 BE", 		"No Finish (T20)", 		"No Finish", 		"143"],
+
+["T20 D17 BE", 		"No Finish (T20)", 		"No Finish", 		"144"],
+
+["T20 T20 B", 		"No Finish (T20)", 		"No Finish", 		"145"],
+
+["T20 D18 BE", 		"No Finish (T20)", 		"No Finish", 		"146"],
+
+["T20 T20 T9", 		"No Finish (T20)", 		"No Finish", 		"147"],
+
+["T20 D19 BE", 		"No Finish (T20)", 		"No Finish", 		"148"],
+
+["T20 T13 BE", 		"No Finish (T20)", 		"No Finish", 		"149"],
+
+["T20 D20 BE", 		"No Finish (T20)", 		"No Finish", 		"150"],
+
+["T20 D20 T17", 		"No Finish (T20)", 		"No Finish", 		"151"],
+
+["T20 T14 BE", 		"No Finish (T20)", 		"No Finish", 		"152"],
+
+["T20 T20 T11", 		"No Finish (T20)", 		"No Finish", 		"153"],
+
+["T20 D20 T18", 		"No Finish (T20)", 		"No Finish", 		"154"],
+
+["T20 T15 BE", 		"No Finish (T20)", 		"No Finish", 		"155"],
+
+["T20 T20 T12", 		"No Finish (T20)", 		"No Finish", 		"156"],
+
+["T20 D20 T19", 		"No Finish (T20)", 		"No Finish", 		"157"],
+
+["T20 T16 BE", 		"No Finish (T20)", 		"No Finish", 		"158"],
+
+["T20 T20 T13", 		"No Finish (T20)", 		"No Finish", 		"159"],
+
+["T20 BE BE", 		"No Finish (T20)", 		"No Finish", 		"160"],
+
+["T20 T17 BE", 		"No Finish (T20)", 		"No Finish", 		"161"],
+
+["T20 T20 T14", 		"No Finish (T20)", 		"No Finish", 		"162"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"163"],
+
+["T20 T18 BE", 		"No Finish (T20)", 		"No Finish", 		"164"],
+
+["T20 T20 T15", 		"No Finish (T20)", 		"No Finish", 		"165"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"166"],
+
+["T20 T19 BE", 		"No Finish (T20)", 		"No Finish", 		"167"],
+
+["T20 T20 T16", 		"No Finish (T20)", 		"No Finish", 		"168"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"169"],
+
+["T20 T20 BE", 		"No Finish (T20)", 		"No Finish", 		"170"],
+
+["T20 T20 T17", 		"No Finish (T20)", 		"No Finish", 		"171"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"172"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"173"],
+
+["T20 T20 T18", 		"No Finish (T20)", 		"No Finish", 		"174"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"175"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"176"],
+
+["T20 T20 T19", 		"No Finish (T20)", 		"No Finish", 		"177"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"178"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"179"],
+
+["T20 T20 T20", 		"No Finish (T20)", 		"No Finish", 		"180"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"181"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"182"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"183"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"184"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"185"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"186"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"187"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"188"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"189"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"190"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"191"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"192"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"193"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"194"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"195"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"196"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"197"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"198"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"199"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"200"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"201"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"202"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"203"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"204"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"205"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"206"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"207"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"208"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"209"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"210"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"211"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"212"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"213"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"214"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"215"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"216"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"217"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"218"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"219"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"220"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"221"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"222"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"223"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"224"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"225"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"226"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"227"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"228"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"229"],
+
+["No Finish (T20)", 		"No Finish (T20)", 		"No Finish", 		"230"]
+
+]

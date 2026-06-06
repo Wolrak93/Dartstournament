@@ -1,0 +1,251 @@
+/* BullThrowScreen */
+
+.bull-screen {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+}
+
+.bull-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: #f3f4f6;
+}
+
+.bull-round {
+  color: #9ca3af;
+  font-size: 1rem;
+  margin: 0 0 1rem;
+}
+
+/* Loading / error full-page states */
+
+.bull-loading {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.bull-error-page {
+  color: #fca5a5;
+}
+
+/* Instruction text */
+
+.bull-instruction {
+  font-size: 1.1rem;
+  color: #d1d5db;
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+
+.bull-instruction--tie {
+  color: #fca5a5;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+/* Player columns layout */
+
+.bull-players {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 960px;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.bull-team {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.bull-vs {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #6d28d9;
+  padding-top: 3rem;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+/* Selectable / display player card */
+
+.bull-player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  background: #1a1a2e;
+  border-radius: 14px;
+  padding: 1.25rem 1rem;
+  min-width: 150px;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+  color: #f3f4f6;
+  text-align: center;
+}
+
+/* Remove default button styling */
+button.bull-player-card {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.bull-player-card--default:hover:not(:disabled) {
+  border-color: #4b5563;
+  background: #1e2d4a;
+  transform: scale(1.03);
+}
+
+.bull-player-card--selected-winner {
+  border-color: #34d399;
+  background: #064e3b22;
+}
+
+.bull-player-card--selected-opponent {
+  border-color: #60a5fa;
+  background: #1e3a5f22;
+}
+
+.bull-player-card--disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Player photo */
+
+.bull-player-photo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #374151;
+  flex-shrink: 0;
+}
+
+.bull-player-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bull-player-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #4b5563;
+}
+
+.bull-player-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+/* Selection badge */
+
+.bull-selection-badge {
+  border-radius: 12px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.bull-selection-badge--winner {
+  background: #34d399;
+  color: #000;
+}
+
+.bull-selection-badge--opponent {
+  background: #60a5fa;
+  color: #000;
+}
+
+/* Inline validation error */
+
+.bull-inline-error {
+  color: #fca5a5;
+  font-size: 0.95rem;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+/* Action buttons row */
+
+.bull-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Result phase */
+
+.bull-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.bull-result-banner {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #34d399;
+  text-align: center;
+}
+
+/* Buttons */
+
+.bull-btn {
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.bull-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bull-btn--primary {
+  background: #6d28d9;
+  color: #fff;
+}
+
+.bull-btn--primary:hover:not(:disabled) {
+  background: #7c3aed;
+}
+
+.bull-btn--secondary {
+  background: #374151;
+  color: #f3f4f6;
+}
+
+.bull-btn--secondary:hover:not(:disabled) {
+  background: #4b5563;
+}

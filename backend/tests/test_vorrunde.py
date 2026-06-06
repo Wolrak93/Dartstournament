@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from app.services.events import DetectedEvent, EventType
 from app.services.vorrunde import (
     MatchPairing,
     SwissState,
@@ -232,6 +233,151 @@ class TestSwissSingles:
 
 
 # ---------------------------------------------------------------------------
+# Swiss system — doubles
+# ---------------------------------------------------------------------------
+
+
+class TestSwissDoubles:
+    def _run_rounds(self, state: SwissState, num_rounds: int) -> list[MatchPairing]:
+        """Run num_rounds Swiss rounds with dummy results and return all pairings."""
+        all_pairings: list[MatchPairing] = []
+        for _ in range(num_rounds):
+            round_pairings = generate_swiss_round(state)
+            all_pairings.extend(round_pairings)
+            for p in round_pairings:
+                record_match_result(
+                    state,
+                    p,
+                    winner_team=1,
+                    scores={pid: 200 for pid in p.team1 + p.team2},
+                    visits={pid: 10 for pid in p.team1 + p.team2},
+                )
+        return all_pairings
+
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_all_pairings_are_doubles(self, n: int):
+        state = SwissState(player_ids=player_ids(n))
+        pairings = generate_swiss_round(state)
+        for p in pairings:
+            assert len(p.team1) == 2
+            assert len(p.team2) == 2
+
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_teams_have_4_unique_players(self, n: int):
+        state = SwissState(player_ids=player_ids(n))
+        pairings = generate_swiss_round(state)
+        for p in pairings:
+            all_four = p.team1 + p.team2
+            assert len(all_four) == len(set(all_four)), (
+                "A player appears on both teams in the same match"
+            )
+
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_no_repeat_partners_over_multiple_rounds(self, n: int):
+        state = SwissState(player_ids=player_ids(n))
+        all_pairings = self._run_rounds(state, 6)
+
+        seen_partners: dict[int, set[int]] = {}
+        for p in all_pairings:
+            for team in [p.team1, p.team2]:
+                a, b = team[0], team[1]
+                assert b not in seen_partners.get(a, set()), (
+                    f"Players {a} and {b} were partners more than once"
+                )
+                seen_partners.setdefault(a, set()).add(b)
+                seen_partners.setdefault(b, set()).add(a)
+
+    def test_no_byes_for_12_players(self):
+        """With 12 players every player must participate in every round."""
+        ids = player_ids(12)
+        state = SwissState(player_ids=ids)
+        for _ in range(6):
+            round_pairings = generate_swiss_round(state)
+            ids_in_round = {pid for p in round_pairings for pid in p.team1 + p.team2}
+            assert ids_in_round == set(ids), "Not all 12 players participated in round"
+            for p in round_pairings:
+                record_match_result(
+                    state,
+                    p,
+                    winner_team=1,
+                    scores={pid: 200 for pid in p.team1 + p.team2},
+                    visits={pid: 10 for pid in p.team1 + p.team2},
+                )
+
+    def test_bye_fairness_10_players(self):
+        """With 10 players byes must be distributed as evenly as possible.
+
+        Over 6 rounds, 12 byes total are handed out to 10 players.
+        The fairest distribution is 8 players with 1 bye and 2 players
+        with 2 byes → max − min ≤ 1.
+        """
+        state = SwissState(player_ids=player_ids(10))
+        self._run_rounds(state, 6)
+        bye_vals = list(state.bye_counts.values())
+        assert max(bye_vals) - min(bye_vals) <= 1, (
+            f"Bye counts are unfair: {bye_vals}"
+        )
+
+    def test_exactly_2_byes_per_round_for_10_players(self):
+        """Each round with 10 players exactly 2 players must sit out."""
+        state = SwissState(player_ids=player_ids(10))
+        for _ in range(4):
+            round_pairings = generate_swiss_round(state)
+            ids_playing = {pid for p in round_pairings for pid in p.team1 + p.team2}
+            assert len(ids_playing) == 8, (
+                f"Expected 8 active players, got {len(ids_playing)}"
+            )
+            for p in round_pairings:
+                record_match_result(
+                    state,
+                    p,
+                    winner_team=1,
+                    scores={pid: 200 for pid in p.team1 + p.team2},
+                    visits={pid: 10 for pid in p.team1 + p.team2},
+                )
+
+    @pytest.mark.parametrize("n", [10, 12])
+    def test_round_numbers_increment(self, n: int):
+        state = SwissState(player_ids=player_ids(n))
+        for expected_round in range(1, 4):
+            pairings = generate_swiss_round(state)
+            for p in pairings:
+                assert p.round_number == expected_round
+            for p in pairings:
+                record_match_result(
+                    state,
+                    p,
+                    winner_team=1,
+                    scores={pid: 200 for pid in p.team1 + p.team2},
+                    visits={pid: 10 for pid in p.team1 + p.team2},
+                )
+
+    def test_stronger_teams_face_each_other(self):
+        """After a round where standings differ, team strength should be
+        respected: the strongest team must face the 2nd-strongest team."""
+        ids = player_ids(12)
+        state = SwissState(player_ids=ids)
+
+        # Manually set distinct standings so team strength is predictable
+        for i, pid in enumerate(ids):
+            state.standings[pid].reg_points = float(len(ids) - i)  # 12, 11, ..., 1
+
+        pairings = generate_swiss_round(state)
+
+        def team_strength(team: list[int]) -> float:
+            return sum(state.standings[pid].reg_points for pid in team)
+
+        match_strengths = [
+            (team_strength(p.team1), team_strength(p.team2)) for p in pairings
+        ]
+        # The match with the highest total combined strength should be match 1
+        combined = [s1 + s2 for s1, s2 in match_strengths]
+        assert combined[0] == max(combined), (
+            "The strongest teams are not paired against each other"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Points calculation
 # ---------------------------------------------------------------------------
 
@@ -380,3 +526,81 @@ class TestStandingsOrdering:
         state.standings[2].total_visits = 10  # avg=10, bonus=0.1
         standings = get_standings(state)
         assert standings[0].player_id == 1
+
+
+# ---------------------------------------------------------------------------
+# Regression: bonus_points updated automatically via record_match_result()
+# ---------------------------------------------------------------------------
+
+
+class TestBonusPointsWiring:
+    """Verify that bonus_events passed to record_match_result() are applied."""
+
+    def _make_pairing(self) -> MatchPairing:
+        return MatchPairing(round_number=1, team1=[1], team2=[2])
+
+    def test_bonus_events_update_winner_bonus_points(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = self._make_pairing()
+        ev26 = DetectedEvent(event_type=EventType.GEWORFEN_26, count=1, bonus_value=26)
+        bonus_events = {1: [ev26], 2: []}
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+            bonus_events=bonus_events,
+        )
+        assert state.standings[1].bonus_points == 26
+        assert state.standings[2].bonus_points == 0
+
+    def test_bonus_events_update_loser_bonus_points(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = self._make_pairing()
+        ev180 = DetectedEvent(
+            event_type=EventType.GEWORFEN_180, count=1, bonus_value=1800
+        )
+        bonus_events = {1: [], 2: [ev180]}
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+            bonus_events=bonus_events,
+        )
+        assert state.standings[1].bonus_points == 0
+        assert state.standings[2].bonus_points == 1800
+
+    def test_no_bonus_events_leaves_bonus_points_unchanged(self):
+        """Without bonus_events the existing bonus_points must be preserved."""
+        state = SwissState(player_ids=[1, 2])
+        state.standings[1].bonus_points = 42
+        pairing = self._make_pairing()
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+        )
+        assert state.standings[1].bonus_points == 42
+        assert state.standings[2].bonus_points == 0
+
+    def test_negative_bonus_events_reduce_points(self):
+        state = SwissState(player_ids=[1, 2])
+        pairing = self._make_pairing()
+        bonus_events = {
+            1: [DetectedEvent(event_type=EventType.BUST, count=2, bonus_value=-2)],
+            2: [],
+        }
+        record_match_result(
+            state,
+            pairing,
+            winner_team=1,
+            scores={1: 100, 2: 80},
+            visits={1: 5, 2: 6},
+            bonus_events=bonus_events,
+        )
+        assert state.standings[1].bonus_points == -2

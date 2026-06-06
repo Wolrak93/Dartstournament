@@ -89,3 +89,31 @@ def update_standing_bonus(
         events:   Events detected for the player's visit.
     """
     standing.bonus_points += sum_visit_bonus(events)
+
+
+# ---------------------------------------------------------------------------
+# Persistence helpers (require an async DB session)
+# ---------------------------------------------------------------------------
+
+
+async def load_bonus_from_db(
+    db: object,
+    tournament_id: int,
+    player_id: int,
+) -> int:
+    """Load a player's total Vorrunde bonus points directly from the DB.
+
+    Reads from the SpecialEvent table instead of in-memory accumulated totals.
+    Useful for restoring state after a server restart or for audit purposes.
+
+    Args:
+        db:            Async SQLAlchemy session.
+        tournament_id: DB id of the tournament.
+        player_id:     DB id of the player.
+
+    Returns:
+        Total bonus points earned by the player in Vorrunde matches.
+    """
+    from app.repositories.special_event_repo import sum_bonus_by_player_and_tournament
+
+    return await sum_bonus_by_player_and_tournament(db, tournament_id, player_id)

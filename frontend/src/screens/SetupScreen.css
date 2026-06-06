@@ -1,0 +1,204 @@
+/* SetupScreen — touch-friendly layout for the referee tablet */
+
+/* ----- Back button ----- */
+
+.setup-back-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #6d28d9;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.setup-back-btn:active {
+  opacity: 0.7;
+}
+
+/* ----- Tournament name input ----- */
+
+.setup-name-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.setup-name-input:focus {
+  border-color: #6d28d9;
+}
+
+.setup-name-input--error {
+  border-color: #f87171;
+}
+
+.setup-screen {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.setup-title {
+  font-size: 2.4rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+.setup-subtitle {
+  font-size: 1.4rem;
+  text-align: center;
+  margin: 0;
+  opacity: 0.75;
+}
+
+/* ----- Error / validation messages ----- */
+
+.setup-error {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: #b91c1c;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.setup-validation {
+  color: #b45309;
+  font-size: 0.9rem;
+  margin: 8px 0 0;
+}
+
+/* ----- Section headings ----- */
+
+.setup-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+/* ----- Player list ----- */
+
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  min-height: 60px;
+  background: #fff;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.player-card:active {
+  opacity: 0.85;
+}
+
+.player-card--selected {
+  border-color: #6d28d9;
+  background: #ede9fe;
+}
+
+.player-checkbox {
+  /* Visually hidden but still accessible */
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: #6d28d9;
+}
+
+.player-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.player-name {
+  font-size: 1rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ----- Mode toggle ----- */
+
+.mode-toggle {
+  display: flex;
+  gap: 10px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 14px 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.mode-btn:active {
+  opacity: 0.85;
+}
+
+.mode-btn--active {
+  border-color: #6d28d9;
+  background: #ede9fe;
+  color: #4c1d95;
+}
+
+/* ----- Start button ----- */
+
+.start-btn {
+  padding: 18px 24px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  background: #6d28d9;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+
+.start-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.start-btn:not(:disabled):active {
+  background: #5b21b6;
+}

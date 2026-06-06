@@ -335,7 +335,7 @@ class TestSpecialEventModel:
         event = SpecialEvent(
             visit_id=visit.id,
             player_id=p1.id,
-            event_type=EventType.score_180,
+            event_type=EventType.GEWORFEN_180,
             bonus_value=1800,
             count=1,
         )
@@ -343,7 +343,7 @@ class TestSpecialEventModel:
         await db_session.flush()
 
         assert event.id is not None
-        assert event.event_type == EventType.score_180
+        assert event.event_type == EventType.GEWORFEN_180
         assert event.bonus_value == 1800
 
     async def test_ko_event_zero_bonus(self, db_session: AsyncSession):
@@ -379,7 +379,7 @@ class TestSpecialEventModel:
         event = SpecialEvent(
             visit_id=visit.id,
             player_id=p1.id,
-            event_type=EventType.score_180,
+            event_type=EventType.GEWORFEN_180,
             bonus_value=0,
             count=1,
         )

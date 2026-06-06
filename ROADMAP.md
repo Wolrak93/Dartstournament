@@ -11,35 +11,35 @@ Designed to work year after year with varying player counts (9–13).
 
 ## Development Cycles
 
-### Cycle 1 — Foundation & Tournament Engine
+### Cycle 1 — Foundation & Tournament Engine ✓ COMPLETE
 
-Backend logic only — no UI yet.
+Backend logic only — no UI. 307 tests passing. Merged to development.
 
-- [ ] Project scaffolding (backend + frontend directories, pyproject.toml, package.json)
-- [ ] Data models: Player, Tournament, Match, Score, SpecialEvent, BonusPoints
-- [ ] Vorrunde logic
+- [x] Project scaffolding (backend + frontend directories, pyproject.toml, package.json)
+- [x] Data models: Player, Tournament, Match, Score, SpecialEvent, BonusPoints
+- [x] Vorrunde logic
   - Swiss system implementation (dynamic pairing after each round)
   - Fixed draw implementation (all pairings set at tournament start)
   - Singles mode (n = 9, 11, 13): 3–4 matches per player
   - Doubles mode (n = 10, 12): 6 matches per player, rotating partners
   - Points: Win/Loss + 3-Dart-Average × (1/100)
-- [ ] KO bracket logic
+- [x] KO bracket logic
   - Qualification: top 6 by regular points + top 2 bonus points among remaining
   - Quarter-finals → Semi-finals → 3rd-place match → Final (2 legs)
   - Single-Out fallback after 25 visits
-- [ ] Lightning Round (Nebenrunde) logic
+- [x] Lightning Round (Nebenrunde) logic
   - Parallel to KO rounds, one match per KO round where possible
   - 301, Single-Out
-- [ ] Match flow engine
+- [x] Match flow engine
   - Bull throw to determine starting player
   - Score validation (bust detection, valid doubles for Double-Out)
   - Checkout suggestion calculator
   - Single-Out fallback trigger
-- [ ] Handicap calculator
+- [x] Handicap calculator
   - Threshold: ≥ 3 championship difference → +100 points; +40 per additional
   - Doubles: divide total handicap by 4 (4 pairwise comparisons)
-- [ ] Special events detection engine (all 18 events from CLAUDE.md)
-- [ ] Bonus points aggregation per player
+- [x] Special events detection engine (all 18 events from CLAUDE.md)
+- [x] Bonus points aggregation per player
 
 ### Cycle 2 — Main Screen UI (Touch)
 
@@ -100,7 +100,25 @@ Phone-accessible view for players and spectators.
 - [ ] Performance check (latency, touch responsiveness)
 - [ ] Lessons-learned session
 
-### Cycle 6 (Optional) — Camera-Based Dart Detection
+### Cycle 6 — Personalised Checkout Profiles
+
+Generate player-specific optimal checkout suggestion tables via Monte Carlo simulation, driven by each player's manually configured throw profile. Players can update their profile at any time before or during the tournament; any change triggers an immediate recalculation.
+
+Player profile parameters:
+- Normal standard deviation (general aiming accuracy)
+- Standard deviation on strong fields (tighter spread when aiming at a preferred field)
+- List of strong fields (the fields where the reduced deviation applies)
+
+Tasks:
+- [ ] Player profile model: store the three parameters per player (normal σ, strong-field σ, strong-field list)
+- [ ] Profile UI: settings screen where each player can view and edit their own profile
+- [ ] Monte Carlo evaluator: for each score (1–230) and dart count (1–3), simulate N throws per candidate checkout path using the player's σ values and select the highest-probability finish
+- [ ] Profile generator: produce `checkouts_<player>.json` in the existing table format on every profile save
+- [ ] Backend: serve the correct personalised checkout table for the currently active player
+- [ ] Frontend: display personalised checkout suggestions on the score entry screen
+- [ ] Fallback: use the default single-out table if no profile exists for a player
+
+### Cycle 7 (Optional) — Camera-Based Dart Detection
 
 - [ ] Webcam integration
 - [ ] Computer vision: detect dart positions and calculate score

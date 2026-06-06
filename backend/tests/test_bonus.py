@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from conftest import _miss  # shared helper; defined once in conftest.py
+
 from app.services.bonus import (
     aggregate_bonus,
     apply_visit_bonus,
@@ -23,10 +25,6 @@ def _single(n: int) -> Dart:
 
 def _triple(n: int) -> Dart:
     return Dart(score=n * 3, band=DartBand.TRIPLE, number=n)
-
-
-def _miss() -> Dart:
-    return Dart(score=0, band=DartBand.MISS, number=0)
 
 
 def _bullseye() -> Dart:

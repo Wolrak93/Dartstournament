@@ -1,0 +1,158 @@
+/* WalkOnScreen */
+
+.walkon-screen {
+  height: 100vh;
+  background: #0f0f1a;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.walkon-photo-col {
+  flex: 0 0 45%;
+  position: relative;
+  overflow: hidden;
+}
+
+.walkon-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.walkon-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  height: 100%;
+  background: linear-gradient(160deg, #2a2a3a 0%, #0a0a14 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3a3a5a;
+  font-size: 5rem;
+}
+
+.walkon-photo-fade {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 60px;
+  background: linear-gradient(to right, transparent, #0f0f1a);
+}
+
+.walkon-info-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 2rem 5rem 1.5rem;
+  gap: 0.75rem;
+  color: #f3f4f6;
+  overflow-y: auto;
+}
+
+.walkon-name {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #f3f4f6;
+  line-height: 1.1;
+}
+
+.walkon-nickname {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #a78bfa;
+  margin-top: 0.2rem;
+}
+
+.walkon-divider {
+  width: 40px;
+  height: 2px;
+  background: #4a4a6a;
+  margin: 0.25rem 0;
+}
+
+.walkon-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+  margin-bottom: 0.2rem;
+}
+
+.walkon-text {
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+
+.walkon-best {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+.walkon-stats {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.walkon-stat {
+  background: #1a1a2e;
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  text-align: center;
+  flex: 1;
+}
+
+.walkon-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
+.walkon-stat-value--avg   { color: #34d399; }
+.walkon-stat-value--wins  { color: #60a5fa; }
+.walkon-stat-value--losses { color: #f87171; }
+
+.walkon-stat-sub {
+  font-size: 0.6rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+}
+
+.walkon-btn {
+  position: absolute;
+  bottom: 1.25rem;
+  right: 1.5rem;
+  background: #dc2626;
+  color: #fff;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+  touch-action: manipulation;
+}
+
+.walkon-btn:active {
+  background: #b91c1c;
+}
+
+.walkon-loading,
+.walkon-error {
+  min-height: 100vh;
+  background: #0f0f1a;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.walkon-error { color: #fca5a5; }
