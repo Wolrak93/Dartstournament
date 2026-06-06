@@ -64,7 +64,7 @@ export default function WalkOnScreen() {
   function startMusic(player: Player): void {
     stopMusic()
     if (!player.music_path) return
-    const audio = new Audio(`${API_BASE}/static/${player.music_path}`)
+    const audio = new Audio(`${API_BASE}/music/${player.music_path}`)
     audioRef.current = audio
     audio.play().catch((err: unknown) => {
       console.warn('[WalkOnScreen] Music playback failed:', err)

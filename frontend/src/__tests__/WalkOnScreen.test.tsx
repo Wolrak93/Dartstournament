@@ -68,7 +68,7 @@ function makeMatch(overrides: Partial<MatchRead> = {}): MatchRead {
 function makePlayer(
   id: number,
   name: string,
-  musicPath: string | null = `music/${name}.mp3`,
+  musicPath: string | null = `${name}.mp3`,
 ): Player {
   return { id, name, photo_path: null, music_path: musicPath, championship_count: 0 }
 }
@@ -147,7 +147,7 @@ describe('WalkOnScreen', () => {
 
     await user.click(screen.getByRole('button', { name: /musik starten/i }))
 
-    expect(vi.mocked(Audio)).toHaveBeenCalledWith('http://localhost:8000/static/music/Lars.mp3')
+    expect(vi.mocked(Audio)).toHaveBeenCalledWith('http://localhost:8000/music/Lars.mp3')
     expect(mockPlay).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: /ready/i })).toBeInTheDocument()
   })
