@@ -12,7 +12,6 @@ export default function SetupScreen() {
   const navigate = useNavigate()
   const { setTournamentId } = useTournament()
 
-  const [tournamentName, setTournamentName] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [mode, setMode] = useState<TournamentMode>('swiss')
@@ -38,8 +37,6 @@ export default function SetupScreen() {
     })
   }
 
-  const nameError: string | null = tournamentName.trim() === '' ? 'Bitte einen Turniernamen eingeben.' : null
-
   const selectionError: string | null = (() => {
     if (selected.size < MIN_PLAYERS)
       return `Mindestens ${MIN_PLAYERS} Spieler auswählen (aktuell: ${selected.size})`
@@ -49,14 +46,13 @@ export default function SetupScreen() {
   })()
 
   const handleStart = async () => {
-    if (nameError || selectionError) return
+    if (selectionError) return
     setLoading(true)
     setSubmitError(null)
     try {
       const tournament = await createTournament({
         player_ids: [...selected],
         mode,
-        name: tournamentName.trim(),
       })
       await startTournament(tournament.id)
       setTournamentId(tournament.id)
@@ -86,22 +82,6 @@ export default function SetupScreen() {
           Spieler konnten nicht geladen werden: {fetchError}
         </p>
       )}
-
-      <section className="setup-name">
-        <h3 className="setup-section-title">Turniername</h3>
-        <input
-          type="text"
-          className={`setup-name-input${nameError && tournamentName !== '' ? ' setup-name-input--error' : ''}`}
-          placeholder="z. B. Backsberger Open 2026"
-          value={tournamentName}
-          onChange={(e) => setTournamentName(e.target.value)}
-        />
-        {nameError && tournamentName === '' && (
-          <p className="setup-validation" role="alert">
-            {nameError}
-          </p>
-        )}
-      </section>
 
       <section className="setup-players">
         <h3 className="setup-section-title">
@@ -169,7 +149,7 @@ export default function SetupScreen() {
       <button
         type="button"
         className="start-btn"
-        disabled={!!nameError || !!selectionError || loading}
+        disabled={!!selectionError || loading}
         onClick={handleStart}
       >
         {loading ? 'Starte...' : 'Turnier starten'}

@@ -74,6 +74,7 @@ function TbdMatch({ label }: { label: string }) {
 export default function BracketScreen() {
   const { tournamentId } = useTournament()
   const [bracket, setBracket] = useState<KOBracketResponse | null>(null)
+  const [bracketNotStarted, setBracketNotStarted] = useState(false)
   const [playerMap, setPlayerMap] = useState<Record<number, Player>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -92,10 +93,8 @@ export default function BracketScreen() {
   const loadBracket = useCallback(() => {
     if (tournamentId === null) return
     getKOBracket(tournamentId)
-      .then(data => setBracket(data))
-      .catch(() => {
-        // Bracket not yet started — bracket stays null, all slots render as TBD
-      })
+      .then(data => { setBracket(data); setBracketNotStarted(false) })
+      .catch(() => { setBracketNotStarted(true) })
   }, [tournamentId])
 
   useEffect(() => {
@@ -140,7 +139,10 @@ export default function BracketScreen() {
               {error}
             </p>
           )}
-          <div className="bracket">
+          {bracketNotStarted && (
+            <p className="overview-empty">Das KO-Bracket beginnt nach der Vorrunde.</p>
+          )}
+          {!bracketNotStarted && <div className="bracket">
             <div className="bracket-round">
               <h2 className="bracket-round-label">Viertelfinale</h2>
               {qfSlots.map((match, i) =>
@@ -177,7 +179,7 @@ export default function BracketScreen() {
                 <TbdMatch label="3rd" />
               )}
             </div>
-          </div>
+          </div>}
         </section>
       </div>
     </div>

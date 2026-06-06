@@ -258,25 +258,25 @@ A task is only done when: code works, tests pass, user has approved, branch merg
 **Branch:** `feature/frontend-walkon`
 
 ### Screen (`/walkon/:matchId`)
-- [ ] Fetch match state: get player IDs, map to photo + music assets
-- [ ] Fullscreen layout:
+- [x] Fetch match state: get player IDs, map to photo + music assets
+- [x] Fullscreen layout:
       - Player photo (full bleed or centered large)
       - Player name overlay (large text)
       - Background: dark/dramatic
-- [ ] Auto-play walk-on music from `user_input/music/` on screen mount
-- [ ] Stop music when referee taps "Ready" button (or on navigate away)
-- [ ] Trigger: navigate here before KO and Lightning Round matches only
+- [x] Auto-play walk-on music from `user_input/music/` on screen mount
+- [x] Stop music when referee taps "Ready" button (or on navigate away)
+- [x] Trigger: navigate here before KO and Lightning Round matches only
       (Vorrunde matches go directly to Bull Throw)
-- [ ] "Ready — Continue" button → navigate to Bull Throw screen
+- [x] "Ready — Continue" button → navigate to Bull Throw screen
 
 ### Player → Asset Mapping
-- [ ] Define mapping for all known players (Philipp, Mike, Henrik, Lars, Joachim,
+- [x] Define mapping for all known players (Philipp, Mike, Henrik, Lars, Joachim,
       Jonas, Janni, Jens, Elina, Lena) to their photo + music files
-- [ ] Fallback: blank photo and no music if player has no assets
+- [x] Fallback: blank photo and no music if player has no assets
 
 ### Tests
-- [ ] Screen mounts → music plays, photo shown
-- [ ] "Ready" → music stops, navigates to bull throw
+- [x] Screen mounts → music plays, photo shown
+- [x] "Ready" → music stops, navigates to bull throw
 
 ---
 

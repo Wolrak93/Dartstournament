@@ -654,7 +654,7 @@ export default function ScoreEntryScreen() {
               className="score-checkout"
               style={{ visibility: isTeam1Active && activeDynamicCheckout() != null ? 'visible' : 'hidden' }}
             >
-              {activeDynamicCheckout()?.text ?? '\u00A0'}
+              {isTeam1Active ? activeDynamicCheckout()?.text ?? '\u00A0' : '\u00A0'}
             </div>
           )}
         </div>
@@ -695,7 +695,7 @@ export default function ScoreEntryScreen() {
               className="score-checkout"
               style={{ visibility: !isTeam1Active && activePlayerId != null && activeDynamicCheckout() != null ? 'visible' : 'hidden' }}
             >
-              {activeDynamicCheckout()?.text ?? '\u00A0'}
+              {!isTeam1Active && activePlayerId != null ? activeDynamicCheckout()?.text ?? '\u00A0' : '\u00A0'}
             </div>
           )}
         </div>

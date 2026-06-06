@@ -24,13 +24,16 @@ vi.mock('../api/client', () => ({
   getPlayers: vi.fn(),
   getStandings: vi.fn(),
   getNextMatches: vi.fn(),
+  getTournamentById: vi.fn(),
+  triggerNextRound: vi.fn(),
+  startKOPhase: vi.fn(),
 }))
 
 vi.mock('../hooks/useWebSocket', () => ({
   useWebSocket: vi.fn(() => ({ lastEvent: null, isConnected: false })),
 }))
 
-import { getPlayers, getStandings, getNextMatches } from '../api/client'
+import { getPlayers, getStandings, getNextMatches, getTournamentById } from '../api/client'
 import { useWebSocket } from '../hooks/useWebSocket'
 
 // ---------------------------------------------------------------------------
@@ -75,6 +78,13 @@ describe('StandingsScreen', () => {
     vi.mocked(getPlayers).mockResolvedValue(MOCK_PLAYERS)
     vi.mocked(getStandings).mockResolvedValue(makeStandings())
     vi.mocked(getNextMatches).mockResolvedValue([])
+    vi.mocked(getTournamentById).mockResolvedValue({
+      id: 1,
+      mode: 'fixed',
+      status: 'active',
+      player_count: 9,
+      created_at: '2026-01-01T00:00:00',
+    })
   })
 
   it('renders standings table with player names in rank order', async () => {
