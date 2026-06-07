@@ -129,3 +129,114 @@ def test_mobile_login_wrong_pin(client: TestClient):
 
     resp = client.post("/mobile/auth/login", json={"player_id": 1, "pin": "0000"})
     assert resp.status_code == 401
+
+
+# --- GET /mobile/matches ---
+
+def test_mobile_matches_no_active_tournament(client: TestClient):
+    from app.auth import create_mobile_token
+    from app.models.player import Player
+
+    async def seed():
+        async with client._session_factory() as db:
+            db.add(Player(name="Lars", pin="1234"))
+            await db.commit()
+
+    client._event_loop.run_until_complete(seed())
+
+    token = create_mobile_token(player_id=1, name="Lars")
+    resp = client.get("/mobile/matches", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tournament_id"] is None
+    assert body["live"] == []
+    assert body["upcoming"] == []
+    assert body["completed"] == []
+
+
+# --- GET /mobile/standings ---
+
+def test_mobile_standings_no_active_tournament(client: TestClient):
+    from app.auth import create_mobile_token
+    from app.models.player import Player
+
+    async def seed():
+        async with client._session_factory() as db:
+            db.add(Player(name="Lars", pin="1234"))
+            await db.commit()
+
+    client._event_loop.run_until_complete(seed())
+
+    token = create_mobile_token(player_id=1, name="Lars")
+    resp = client.get("/mobile/standings", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tournament_id"] is None
+    assert body["entries"] == []
+    assert body["phase"] == "none"
+
+
+# --- GET /mobile/bracket ---
+
+def test_mobile_bracket_no_active_tournament(client: TestClient):
+    from app.auth import create_mobile_token
+    from app.models.player import Player
+
+    async def seed():
+        async with client._session_factory() as db:
+            db.add(Player(name="Lars", pin="1234"))
+            await db.commit()
+
+    client._event_loop.run_until_complete(seed())
+
+    token = create_mobile_token(player_id=1, name="Lars")
+    resp = client.get("/mobile/bracket", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tournament_id"] is None
+    assert body["ko_rounds"] == []
+    assert body["nebenrunde"] == []
+
+
+# --- GET /mobile/stats ---
+
+def test_mobile_stats_no_active_tournament(client: TestClient):
+    from app.auth import create_mobile_token
+    from app.models.player import Player
+
+    async def seed():
+        async with client._session_factory() as db:
+            db.add(Player(name="Lars", pin="1234"))
+            await db.commit()
+
+    client._event_loop.run_until_complete(seed())
+
+    token = create_mobile_token(player_id=1, name="Lars")
+    resp = client.get("/mobile/stats", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tournament_id"] is None
+    assert body["players"] == []
+    assert body["totals"] == {}
+
+
+# --- GET /mobile/me ---
+
+def test_mobile_me_returns_player_data(client: TestClient):
+    from app.auth import create_mobile_token
+    from app.models.player import Player as PlayerModel
+
+    async def seed():
+        async with client._session_factory() as db:
+            db.add(PlayerModel(name="Lars", pin="1234"))
+            await db.commit()
+
+    client._event_loop.run_until_complete(seed())
+
+    token = create_mobile_token(player_id=1, name="Lars")
+    resp = client.get("/mobile/me", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == "Lars"
+    assert body["player_id"] == 1
+    assert body["rank"] is None  # no active tournament
