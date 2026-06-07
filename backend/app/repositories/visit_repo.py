@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.match import Visit
 
 
-
 async def create_visit(
     db: AsyncSession,
     match_id: int,

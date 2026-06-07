@@ -8,7 +8,12 @@ from sqlalchemy.orm import selectinload
 
 from app.models.match import Match, Visit
 from app.models.special_event import SpecialEvent
-from app.models.tournament import Tournament, TournamentMode, TournamentPlayer, TournamentStatus
+from app.models.tournament import (
+    Tournament,
+    TournamentMode,
+    TournamentPlayer,
+    TournamentStatus,
+)
 
 
 async def create_tournament(

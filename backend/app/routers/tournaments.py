@@ -10,14 +10,18 @@ from app.database import get_db
 from app.exceptions import bad_request, conflict, not_found
 from app.models.match import Match, MatchStatus, RoundType, Visit
 from app.models.special_event import SpecialEvent
-from app.models.tournament import Tournament, TournamentMode, TournamentPlayer, TournamentStatus
+from app.models.tournament import (
+    Tournament,
+    TournamentMode,
+    TournamentPlayer,
+    TournamentStatus,
+)
 from app.repositories.match_repo import (
     create_match,
     list_matches_by_tournament,
 )
-from app.repositories.special_event_repo import list_events_by_visit
-from app.repositories.visit_repo import list_visits_by_match
 from app.repositories.player_repo import get_player_by_id
+from app.repositories.special_event_repo import list_events_by_visit
 from app.repositories.tournament_player_repo import (
     add_player_to_tournament,
     list_tournament_players,
@@ -29,6 +33,7 @@ from app.repositories.tournament_repo import (
     list_all_tournaments,
     update_tournament_status,
 )
+from app.repositories.visit_repo import list_visits_by_match
 from app.schemas.match import MatchRead
 from app.schemas.tournament import TournamentPlayerRead, TournamentRead
 from app.services.handicap import compute_doubles_handicap, compute_singles_handicap

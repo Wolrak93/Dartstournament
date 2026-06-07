@@ -9,7 +9,6 @@ import asyncio
 from app.database import AsyncSessionLocal, init_db
 from app.models.player import Player
 
-
 PLAYERS = [
     {"name": "Philipp",  "photo_path": "Philipp.png",  "music_path": "Philipp.mp3",  "championship_count": 3},
     {"name": "Mike",     "photo_path": "Mike.png",     "music_path": "Mike.mp3",     "championship_count": 0},
