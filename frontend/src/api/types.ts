@@ -203,3 +203,123 @@ export interface MatchStateResponse {
   single_out_mode: boolean
   checkout_suggestion: CheckoutSuggestion | null
 }
+
+// ---------------------------------------------------------------------------
+// Mobile interfaces
+// ---------------------------------------------------------------------------
+
+export interface MobileLoginRequest {
+  player_id: number
+  pin: string
+}
+
+export interface MobileLoginResponse {
+  token: string
+  player_id: number
+  name: string
+}
+
+export interface MobileLiveMatch {
+  match_id: number
+  round_type: string
+  player1_id: number
+  player1_name: string
+  player2_id: number
+  player2_name: string
+}
+
+export interface MobileUpcomingMatch {
+  match_id: number
+  round_type: string
+  player1_name: string
+  player2_name: string
+}
+
+export interface MobileCompletedMatch {
+  match_id: number
+  round_type: string
+  player1_name: string
+  player2_name: string
+  winner_name: string
+}
+
+export interface MobileMatchesResponse {
+  tournament_id: number | null
+  live: MobileLiveMatch[]
+  upcoming: MobileUpcomingMatch[]
+  completed: MobileCompletedMatch[]
+}
+
+export interface MobileStandingEntry {
+  rank: number
+  player_id: number
+  name: string
+  wins: number
+  losses: number
+  avg_score: number
+  reg_points: number
+  bonus_points: number
+  ko_qualified: boolean
+}
+
+export interface MobileStandingsResponse {
+  tournament_id: number | null
+  phase: string
+  entries: MobileStandingEntry[]
+}
+
+export interface MobileBracketMatch {
+  match_id: number | null
+  player1_name: string | null
+  player2_name: string | null
+  winner_name: string | null
+  is_completed: boolean
+}
+
+export interface MobileBracketRound {
+  label: string
+  matches: MobileBracketMatch[]
+}
+
+export interface MobileNebenrundeMatch {
+  match_id: number
+  round_number: number
+  player1_name: string
+  player2_name: string
+  winner_name: string | null
+  is_completed: boolean
+}
+
+export interface MobileBracketResponse {
+  tournament_id: number | null
+  ko_rounds: MobileBracketRound[]
+  nebenrunde: MobileNebenrundeMatch[]
+}
+
+export interface MobilePlayerStats {
+  player_id: number
+  name: string
+  avg_score: number
+  wins: number
+  losses: number
+  bonus_points: number
+  event_counts: Record<string, number>
+}
+
+export interface MobileStatsResponse {
+  tournament_id: number | null
+  players: MobilePlayerStats[]
+  totals: Record<string, number>
+}
+
+export interface MobileProfileResponse {
+  player_id: number
+  name: string
+  photo_url: string | null
+  rank: number | null
+  reg_points: number
+  bonus_points: number
+  wins: number
+  losses: number
+  avg_score: number
+}
