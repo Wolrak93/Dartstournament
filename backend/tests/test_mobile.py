@@ -42,7 +42,11 @@ def client(event_loop):
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
+    tc = TestClient(app)
+    # Attach helpers so tests can seed into the in-memory DB
+    tc._event_loop = event_loop
+    tc._session_factory = session_factory
+    yield tc
     app.dependency_overrides.clear()
     event_loop.run_until_complete(teardown())
 
@@ -67,15 +71,13 @@ def test_verify_invalid_token_returns_none():
 
 def test_mobile_login_success(client: TestClient):
     from app.models.player import Player
-    from app.database import AsyncSessionLocal
-    import asyncio
 
     async def seed():
-        async with AsyncSessionLocal() as db:
+        async with client._session_factory() as db:
             db.add(Player(name="Lars", pin="1234"))
             await db.commit()
 
-    asyncio.get_event_loop().run_until_complete(seed())
+    client._event_loop.run_until_complete(seed())
 
     resp = client.post("/mobile/auth/login", json={"player_id": 1, "pin": "1234"})
     assert resp.status_code == 200
@@ -86,15 +88,13 @@ def test_mobile_login_success(client: TestClient):
 
 def test_mobile_login_wrong_pin(client: TestClient):
     from app.models.player import Player
-    from app.database import AsyncSessionLocal
-    import asyncio
 
     async def seed():
-        async with AsyncSessionLocal() as db:
+        async with client._session_factory() as db:
             db.add(Player(name="Mike", pin="5678"))
             await db.commit()
 
-    asyncio.get_event_loop().run_until_complete(seed())
+    client._event_loop.run_until_complete(seed())
 
     resp = client.post("/mobile/auth/login", json={"player_id": 1, "pin": "0000"})
     assert resp.status_code == 401
