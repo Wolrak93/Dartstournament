@@ -30,3 +30,7 @@ async def init_db() -> None:
         columns = [row[1] for row in result.fetchall()]
         if "name" not in columns:
             await conn.execute(text("ALTER TABLE tournaments ADD COLUMN name VARCHAR"))
+        result = await conn.execute(text("PRAGMA table_info(players)"))
+        columns = [row[1] for row in result.fetchall()]
+        if "pin" not in columns:
+            await conn.execute(text("ALTER TABLE players ADD COLUMN pin VARCHAR(4)"))

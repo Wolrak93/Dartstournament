@@ -12,6 +12,7 @@ class Player(Base):
     photo_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     music_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     championship_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    pin: Mapped[str | None] = mapped_column(String(4), nullable=True)
 
     # Relationships
     tournament_entries: Mapped[list["TournamentPlayer"]] = relationship(  # noqa: F821
