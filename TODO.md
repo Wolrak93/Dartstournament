@@ -15,17 +15,17 @@ Implementation plan: `docs/superpowers/plans/2026-06-07-cycle3-mobile-web-interf
 **Branch:** `feature/mobile-backend-auth`
 
 ### Player Model
-- [ ] Add `pin: str | None` column to `backend/app/models/player.py`
-- [ ] Add migration in `backend/app/database.py` (`ALTER TABLE players ADD COLUMN pin`)
+- [x] Add `pin: str | None` column to `backend/app/models/player.py`
+- [x] Add migration in `backend/app/database.py` (`ALTER TABLE players ADD COLUMN pin`)
 
 ### JWT Utility
-- [ ] Add `PyJWT` to `backend/pyproject.toml` via `uv add PyJWT`
-- [ ] Create `backend/app/auth.py`:
+- [x] Add `PyJWT` to `backend/pyproject.toml` via `uv add PyJWT`
+- [x] Create `backend/app/auth.py`:
       - `create_mobile_token(player_id, name) → str`
       - `verify_mobile_token(token) → dict | None`
 
 ### Mobile Schemas
-- [ ] Create `backend/app/schemas/mobile.py` with all mobile Pydantic models:
+- [x] Create `backend/app/schemas/mobile.py` with all mobile Pydantic models:
       `MobileLoginRequest/Response`, `MobileLiveMatch`, `MobileUpcomingMatch`,
       `MobileCompletedMatch`, `MobileMatchesResponse`, `MobileStandingEntry`,
       `MobileStandingsResponse`, `MobileBracketMatch/Round/Response`,
@@ -33,20 +33,20 @@ Implementation plan: `docs/superpowers/plans/2026-06-07-cycle3-mobile-web-interf
       `MobileProfileResponse`
 
 ### Mobile Router
-- [ ] Create `backend/app/routers/mobile.py` with:
+- [x] Create `backend/app/routers/mobile.py` with:
       - `_get_active_tournament(db)` helper
       - `_get_current_player(credentials, db)` auth dependency (HTTPBearer + JWT)
       - `POST /mobile/auth/login` → verifies player_id + PIN, returns JWT
 
 ### Registration & CORS
-- [ ] Register `mobile.router` in `backend/app/main.py`
-- [ ] Update CORS `allow_origins` from localhost-only to `["*"]` (required for Cloudflare Tunnel)
+- [x] Register `mobile.router` in `backend/app/main.py`
+- [x] Update CORS `allow_origins` from localhost-only to `["*"]` (required for Cloudflare Tunnel)
 
 ### Tests (`backend/tests/test_mobile.py`)
-- [ ] JWT: `create_mobile_token` + `verify_mobile_token` round-trip
-- [ ] JWT: invalid token returns `None`
-- [ ] Login: valid credentials return token
-- [ ] Login: wrong PIN returns 401
+- [x] JWT: `create_mobile_token` + `verify_mobile_token` round-trip
+- [x] JWT: invalid token returns `None`
+- [x] Login: valid credentials return token
+- [x] Login: wrong PIN returns 401
 
 ---
 
@@ -55,15 +55,15 @@ Implementation plan: `docs/superpowers/plans/2026-06-07-cycle3-mobile-web-interf
 **Branch:** `feature/mobile-backend-endpoints`
 
 ### Endpoints (all in `backend/app/routers/mobile.py`)
-- [ ] `GET /mobile/matches` → `MobileMatchesResponse` (live / upcoming / completed)
-- [ ] `GET /mobile/standings` → `MobileStandingsResponse` (ranked table, KO-qualification flag)
-- [ ] `GET /mobile/bracket` → `MobileBracketResponse` (KO rounds + Nebenrunde matches)
-- [ ] `GET /mobile/stats` → `MobileStatsResponse` (per-player stats + event totals)
-- [ ] `GET /mobile/me` → `MobileProfileResponse` (logged-in player, rank, stats)
+- [x] `GET /mobile/matches` → `MobileMatchesResponse` (live / upcoming / completed)
+- [x] `GET /mobile/standings` → `MobileStandingsResponse` (ranked table, KO-qualification flag)
+- [x] `GET /mobile/bracket` → `MobileBracketResponse` (KO rounds + Nebenrunde matches)
+- [x] `GET /mobile/stats` → `MobileStatsResponse` (per-player stats + event totals)
+- [x] `GET /mobile/me` → `MobileProfileResponse` (logged-in player, rank, stats)
 
 ### Tests (`backend/tests/test_mobile.py`)
-- [ ] Each endpoint: no active tournament → returns empty/null response with 200
-- [ ] `GET /mobile/me`: returns correct player name and player_id from token
+- [x] Each endpoint: no active tournament → returns empty/null response with 200
+- [x] `GET /mobile/me`: returns correct player name and player_id from token
 
 ---
 
@@ -72,11 +72,11 @@ Implementation plan: `docs/superpowers/plans/2026-06-07-cycle3-mobile-web-interf
 **Branch:** `feature/mobile-pin-setup`
 
 ### Script
-- [ ] Create `backend/scripts/set_pins.py`:
+- [x] Create `backend/scripts/set_pins.py`:
       Reads a dict of `{player_name: "XXXX"}` and sets `player.pin` for each.
       Run via `uv run python scripts/set_pins.py` before tournament start.
-- [ ] Document usage in script's docstring and in `README.md` (or a new `DEPLOYMENT.md`)
-- [ ] Add `.superpowers/` to root `.gitignore`
+- [x] Document usage in script's docstring and in `README.md` (or a new `DEPLOYMENT.md`)
+- [x] Add `.superpowers/` to root `.gitignore`
 
 ---
 

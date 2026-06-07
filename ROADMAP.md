@@ -45,18 +45,18 @@ Backend logic only — no UI. 307 tests passing. Merged to development.
 
 Referee-operated touch interface.
 
-- [ ] React + Vite + TypeScript project setup (ESLint, Prettier)
-- [ ] WebSocket connection to backend (real-time state updates)
-- [ ] Bull throw screen (referee enters Bull distance for each player)
-- [ ] Score entry screen
+- [x] React + Vite + TypeScript project setup (ESLint, Prettier)
+- [x] WebSocket connection to backend (real-time state updates)
+- [x] Bull throw screen (referee enters Bull distance for each player)
+- [x] Score entry screen
   - Large touch numpad
   - Current score, remaining, visit counter
   - Checkout suggestion panel
   - Single-Out warning display
-- [ ] Special event popup (animated counter overlay on score entry)
-- [ ] Audio: score announcement via MP3 playback
-- [ ] Walk-on screen: player photo + walk-on music (KO/Lightning rounds only)
-- [ ] Tournament overview screens
+- [x] Special event popup (animated counter overlay on score entry)
+- [x] Audio: score announcement via MP3 playback
+- [x] Walk-on screen: player photo + walk-on music (KO/Lightning rounds only)
+- [x] Tournament overview screens
   - Vorrunde: standings table (regular points + bonus points)
   - KO bracket view
   - Lightning Round bracket view

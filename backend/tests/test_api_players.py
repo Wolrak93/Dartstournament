@@ -6,7 +6,6 @@ Uses FastAPI TestClient with an in-memory SQLite database via dependency overrid
 from __future__ import annotations
 
 import pytest
-import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -32,7 +31,6 @@ def client(event_loop):
             await conn.run_sync(Base.metadata.drop_all)
         await engine.dispose()
 
-    import asyncio
     loop = event_loop
     loop.run_until_complete(create_tables())
 

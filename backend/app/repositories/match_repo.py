@@ -85,11 +85,11 @@ async def update_standings_after_vorrunde_match(
 ) -> None:
     """Update reg_points, avg_score, and bonus_points for all players after a Vorrunde match."""
     from app.repositories.special_event_repo import sum_bonus_by_player_and_tournament
-    from app.repositories.visit_repo import list_visits_by_tournament_and_player
     from app.repositories.tournament_player_repo import (
         get_tournament_player,
         update_tournament_player_standing,
     )
+    from app.repositories.visit_repo import list_visits_by_tournament_and_player
 
     team1_ids = [pid for pid in [match.player1_id, match.player3_id] if pid is not None]
     team2_ids = [pid for pid in [match.player2_id, match.player4_id] if pid is not None]
@@ -144,11 +144,11 @@ async def undo_standings_after_vorrunde_match(
     the avg recalculation reflects the correct remaining visits.
     """
     from app.repositories.special_event_repo import sum_bonus_by_player_and_tournament
-    from app.repositories.visit_repo import list_visits_by_tournament_and_player
     from app.repositories.tournament_player_repo import (
         get_tournament_player,
         update_tournament_player_standing,
     )
+    from app.repositories.visit_repo import list_visits_by_tournament_and_player
 
     team1_ids = [pid for pid in [match.player1_id, match.player3_id] if pid is not None]
     team2_ids = [pid for pid in [match.player2_id, match.player4_id] if pid is not None]
