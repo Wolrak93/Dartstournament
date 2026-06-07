@@ -403,8 +403,8 @@ def test_robin_hood_not_counted_as_tripel():
 
 def test_bounce_and_robin_hood_fire_on_bust():
     # Even when the visit is a bust, Bounce and Robin Hood should still be detected.
-    bounce = _bounce(20)   # score=60, bounce=True → doesn't count toward total
-    rh = _robin_hood(20)   # score=20, robin_hood=True → doesn't count toward total
+    _bounce(20)   # score=60, bounce=True → doesn't count toward total
+    _robin_hood(20)   # score=20, robin_hood=True → doesn't count toward total
     # remaining=10, actual scored = 0 (both excluded) → not a bust from these two
     # Let's make a bust with a single + bounce combo:
     # S20=20 + S1=1 = 21 > remaining=20 → bust, and also a bounce dart
