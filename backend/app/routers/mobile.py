@@ -146,26 +146,40 @@ async def mobile_standings(
     )
     rows = result.all()
 
+    # Load all finished matches once to avoid N+1 queries
+    matches_result = await db.execute(
+        select(Match).where(
+            Match.tournament_id == tournament.id,
+            Match.status == MatchStatus.finished,
+        )
+    )
+    finished_matches = matches_result.scalars().all()
+
+    # Aggregate wins and games for all players in Python (includes doubles partners)
+    wins_map: dict[int, int] = {}
+    games_map: dict[int, int] = {}
+    for tp, player in rows:
+        wins_map[player.id] = 0
+        games_map[player.id] = 0
+
+    for m in finished_matches:
+        team1 = [m.player1_id] + ([m.player3_id] if m.player3_id is not None else [])
+        team2 = [m.player2_id] + ([m.player4_id] if m.player4_id is not None else [])
+        for pid in team1 + team2:
+            if pid in games_map:
+                games_map[pid] += 1
+        if m.winner_id is not None:
+            winning_team = team1 if m.winner_id in team1 else team2
+            for pid in winning_team:
+                if pid in wins_map:
+                    wins_map[pid] += 1
+
+    # Build entries without ko_qualified yet (rank is positional by reg_points)
     entries = []
     for rank, (tp, player) in enumerate(rows, start=1):
-        wins_result = await db.execute(
-            select(Match).where(
-                Match.tournament_id == tournament.id,
-                Match.winner_id == player.id,
-                Match.status == MatchStatus.finished,
-            )
-        )
-        wins = len(wins_result.scalars().all())
-        games_result = await db.execute(
-            select(Match).where(
-                Match.tournament_id == tournament.id,
-                Match.status == MatchStatus.finished,
-                (Match.player1_id == player.id) | (Match.player2_id == player.id),
-            )
-        )
-        games = len(games_result.scalars().all())
+        wins = wins_map.get(player.id, 0)
+        games = games_map.get(player.id, 0)
         losses = games - wins
-
         entries.append(MobileStandingEntry(
             rank=rank,
             player_id=player.id,
@@ -175,8 +189,15 @@ async def mobile_standings(
             avg_score=tp.avg_score,
             reg_points=tp.reg_points,
             bonus_points=tp.bonus_points,
-            ko_qualified=(rank <= 6),
+            ko_qualified=False,  # set correctly below
         ))
+
+    # KO qualification: top 6 by reg_points, then top 2 of remainder by bonus_points
+    for entry in entries[:6]:
+        entry.ko_qualified = True
+    remainder_sorted = sorted(entries[6:], key=lambda e: e.bonus_points, reverse=True)
+    for entry in remainder_sorted[:2]:
+        entry.ko_qualified = True
 
     return MobileStandingsResponse(
         tournament_id=tournament.id,
@@ -289,28 +310,26 @@ async def mobile_stats(
         player_events[ev.player_id][ev.event_type] += 1
         totals[ev.event_type] += 1
 
-    wins_result = await db.execute(
-        select(Match.winner_id, Match.id)
-        .where(
-            Match.tournament_id == tournament.id,
-            Match.status == MatchStatus.finished,
-        )
-    )
-    wins_per_player: dict[int, int] = defaultdict(int)
-    for winner_id, _ in wins_result.all():
-        if winner_id:
-            wins_per_player[winner_id] += 1
-
-    games_result = await db.execute(
+    finished_matches_result = await db.execute(
         select(Match).where(
             Match.tournament_id == tournament.id,
             Match.status == MatchStatus.finished,
         )
     )
+    finished_matches_stats = finished_matches_result.scalars().all()
+
+    wins_per_player: dict[int, int] = defaultdict(int)
     games_per_player: dict[int, int] = defaultdict(int)
-    for m in games_result.scalars().all():
-        games_per_player[m.player1_id] += 1
-        games_per_player[m.player2_id] += 1
+    for m in finished_matches_stats:
+        team1 = [m.player1_id] + ([m.player3_id] if m.player3_id is not None else [])
+        team2 = [m.player2_id] + ([m.player4_id] if m.player4_id is not None else [])
+        for pid in team1 + team2:
+            if pid is not None:
+                games_per_player[pid] += 1
+        if m.winner_id is not None:
+            winning_team = team1 if m.winner_id in team1 else team2
+            for pid in winning_team:
+                wins_per_player[pid] += 1
 
     player_stats = [
         MobilePlayerStats(
@@ -378,7 +397,9 @@ async def mobile_me(
                 Match.tournament_id == tournament.id,
                 Match.status == MatchStatus.finished,
                 (Match.player1_id == current_player.id)
-                | (Match.player2_id == current_player.id),
+                | (Match.player2_id == current_player.id)
+                | (Match.player3_id == current_player.id)
+                | (Match.player4_id == current_player.id),
             )
         )
         losses = len(games_result.scalars().all()) - wins
