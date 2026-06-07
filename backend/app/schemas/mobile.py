@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-
+from pydantic import BaseModel, Field
 
 # --- Auth ---
 
 class MobileLoginRequest(BaseModel):
     player_id: int
-    pin: str
+    pin: str = Field(..., min_length=4, max_length=4, pattern=r"^\d{4}$")
 
 
 class MobileLoginResponse(BaseModel):

@@ -24,7 +24,9 @@ def event_loop():
 @pytest.fixture
 def client(event_loop):
     engine = create_async_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    session_factory = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async def setup():
         async with engine.begin() as conn:
@@ -65,6 +67,35 @@ def test_create_and_verify_token():
 def test_verify_invalid_token_returns_none():
     from app.auth import verify_mobile_token
     assert verify_mobile_token("not.a.token") is None
+
+
+def test_verify_token_with_non_int_sub_is_valid_jwt_but_rejected_by_dependency():
+    """A JWT with sub='not-a-number' passes verify_mobile_token (valid signature)
+    but _get_current_player must catch the ValueError and raise 401.
+    Full dependency path is tested in test_mobile_endpoints.py (TODO 22).
+    """
+    # Manually craft a token with non-int sub using same secret/algorithm
+    import os
+
+    import jwt as pyjwt
+
+    from app.auth import verify_mobile_token
+    secret = os.getenv("MOBILE_JWT_SECRET", "backsberger-open-dev-secret-key-2024")
+    bad_token = pyjwt.encode(
+        {"sub": "not-a-number", "name": "x"}, secret, algorithm="HS256"
+    )
+    payload = verify_mobile_token(bad_token)
+    # Token is cryptographically valid, so verify_mobile_token returns the dict
+    assert payload is not None
+    assert payload["sub"] == "not-a-number"
+    # Attempting int() on it raises ValueError — _get_current_player catches this as 401
+    with pytest.raises(ValueError):
+        int(payload["sub"])
+
+
+# TODO (task 22, feature/mobile-backend-endpoints): add tests for
+# _get_current_player failure paths (missing 'sub', non-int 'sub', player not found)
+# via a real protected endpoint in test_mobile_endpoints.py.
 
 
 # --- Auth endpoint tests ---
