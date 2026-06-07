@@ -88,22 +88,6 @@ async function apiGetAuth<T>(path: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
-async function apiPostAuth<T, B = unknown>(path: string, body?: B): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${getToken() ?? ''}`,
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ detail: response.statusText }))
-    throw new Error((err as { detail?: string }).detail ?? response.statusText)
-  }
-  return response.json() as Promise<T>
-}
-
 // ---------------------------------------------------------------------------
 // Player endpoints
 // ---------------------------------------------------------------------------
