@@ -13,7 +13,16 @@ import type {
   VisitResponse,
   VisitHistoryItem,
   MatchStateResponse,
+  MobileLoginRequest,
+  MobileLoginResponse,
+  MobileMatchesResponse,
+  MobileStandingsResponse,
+  MobileBracketResponse,
+  MobileStatsResponse,
+  MobileProfileResponse,
 } from './types'
+
+import { getToken } from '../mobile/mobileAuth'
 
 export const API_BASE: string =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000'
@@ -60,6 +69,17 @@ async function apiPost<T, B = unknown>(path: string, body?: B): Promise<T> {
     method: 'POST',
     headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: response.statusText }))
+    throw new Error((err as { detail?: string }).detail ?? response.statusText)
+  }
+  return response.json() as Promise<T>
+}
+
+async function apiGetAuth<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${getToken() ?? ''}` },
   })
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: response.statusText }))
@@ -137,3 +157,31 @@ export const undoLastVisit = (matchId: number): Promise<{ undone_visit_id: numbe
 
 export const deleteTournament = (tournamentId: number): Promise<void> =>
   apiDeleteNoContent(`/tournaments/${tournamentId}`)
+
+// ---------------------------------------------------------------------------
+// Mobile endpoints
+// ---------------------------------------------------------------------------
+
+export const mobileLogin = (
+  playerId: number,
+  pin: string,
+): Promise<MobileLoginResponse> =>
+  apiPost<MobileLoginResponse, MobileLoginRequest>('/mobile/auth/login', {
+    player_id: playerId,
+    pin,
+  })
+
+export const getMobileMatches = (): Promise<MobileMatchesResponse> =>
+  apiGetAuth<MobileMatchesResponse>('/mobile/matches')
+
+export const getMobileStandings = (): Promise<MobileStandingsResponse> =>
+  apiGetAuth<MobileStandingsResponse>('/mobile/standings')
+
+export const getMobileBracket = (): Promise<MobileBracketResponse> =>
+  apiGetAuth<MobileBracketResponse>('/mobile/bracket')
+
+export const getMobileStats = (): Promise<MobileStatsResponse> =>
+  apiGetAuth<MobileStatsResponse>('/mobile/stats')
+
+export const getMobileMe = (): Promise<MobileProfileResponse> =>
+  apiGetAuth<MobileProfileResponse>('/mobile/me')
